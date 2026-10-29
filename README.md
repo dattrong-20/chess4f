@@ -69,7 +69,7 @@ Start API and UI in two terminals:
 ```
 
 ```powershell
-.\.venv\Scripts\python.exe -m streamlit run apps/dashboard.py --server.address=127.0.0.1 --server.port=8501
+.\.venv\Scripts\python.exe -m streamlit run apps/dashboard.py --server.address=127.0.0.1 --server.port=8501 --server.headless=true
 ```
 
 - Dashboard: http://localhost:8501

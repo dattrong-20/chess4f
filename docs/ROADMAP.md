@@ -11,7 +11,7 @@ This roadmap separates implemented code from validated deployment. It does not r
 - [x] Experimental pre-game W/D/L model and temporal holdout
 - [x] Public Lichess FEN stream receiver and raw journal
 - [ ] End-to-end live validation on a currently running game
-- [ ] Docker runtime smoke test using final source revision
+- [x] Docker runtime smoke test: API health, Delta-backed overview and Streamlit health
 
 ## M2 — distributed lakehouse integration
 - [ ] S3-compatible object storage with explicit credentials/secrets handling
@@ -46,7 +46,7 @@ This roadmap separates implemented code from validated deployment. It does not r
 - [ ] Kafka integration if it adds replay/consumer value; do not pretend JSONL is Kafka
 
 ## GitHub / CV
-- [ ] Public repository push and Linux CI result
+- [x] Public repository push and Linux CI result (9 tests passed)
 - [ ] Screenshots and reproducible demonstration recording
 - [ ] CV description describes only validated capabilities
 - [ ] Benchmark actual throughput, latency, memory and recovery behavior
