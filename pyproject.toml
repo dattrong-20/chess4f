@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chess4f"
+version = "0.1.0"
+description = "Auditable chess analytics: Delta lakehouse, player profiles and delayed live observation"
+requires-python = ">=3.11"
+dependencies = [
+  "deltalake>=0.25,<2", "duckdb>=1.2,<2", "pyarrow>=18,<24",
+  "python-chess>=1.999,<2", "httpx>=0.28,<1", "filelock>=3.17,<4",
+  "fastapi>=0.115,<1", "uvicorn>=0.34,<1", "zstandard>=0.23,<1",
+  "streamlit>=1.42,<2", "plotly>=6,<7", "scikit-learn>=1.6,<2"
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10"]
+
+[project.scripts]
+chess4f = "chess4f.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
