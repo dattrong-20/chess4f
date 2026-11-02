@@ -37,6 +37,11 @@ def main():
     p.add_argument("--start",required=True); p.add_argument("--end")
     p.add_argument("--limit",type=int,default=1000); p.add_argument("--all",action="store_true")
     p.add_argument("--force",action="store_true")
+    p = sub.add_parser("refresh-months", help="Check source revisions and skip unchanged imported scopes")
+    p.add_argument("--start", required=True); p.add_argument("--end")
+    p.add_argument("--limit", type=int, default=1000)
+    p.add_argument("--all", action="store_true")
+    p.add_argument("--check-only", action="store_true", help="Read HTTP headers only; do not download or ingest games")
     args = parser.parse_args()
     root = data_root()
     if args.command == "catalog":
@@ -57,6 +62,9 @@ def main():
     elif args.command == "train":
         from .model import train
         result = train(root,args.source,args.speed)
+    elif args.command == "refresh-months":
+        from .refresh import refresh_months
+        result = refresh_months(root, args.start, args.end, None if args.all else args.limit, args.check_only)
     elif args.command == "sync-months":
         from .orchestrator import sync_months
         result = sync_months(root,args.start,args.end,None if args.all else args.limit,args.force)

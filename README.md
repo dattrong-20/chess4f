@@ -134,3 +134,7 @@ pytest -q
 - [Lichess API](https://lichess.org/api) — documented public delayed observation.
 
 Independent student project; not affiliated with Chess.com or Lichess. Source/platform terms apply to data. No third-party logos, private tokens or raw player datasets are included in this repository.
+
+## Revision-aware refresh
+
+See [source refresh](docs/REFRESH.md) for header-only availability checks and skipping an unchanged previously ingested scope. The dashboard defaults to Trino; DuckDB remains inside advanced technical settings for local comparison.

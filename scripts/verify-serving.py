@@ -33,7 +33,10 @@ with httpx.Client(timeout=180) as client:
 app = AppTest.from_file(str(Path(__file__).resolve().parents[1] / "apps/dashboard.py"))
 app.run(timeout=180)
 assert not app.exception and not app.error, "Initial dashboard failed"
-app.selectbox[1].select("trino").run(timeout=180)
+engine_control = next(item for item in app.selectbox if item.label == "Query engine")
+engine_control.select("duckdb").run(timeout=180)
+assert not app.exception and not app.error, "DuckDB dashboard failed"
+next(item for item in app.selectbox if item.label == "Query engine").select("trino").run(timeout=180)
 assert not app.exception and not app.error, "Trino dashboard failed"
 assert [item.value for item in app.metric] == expected_metrics, "Dashboard metrics differ from API"
 assert any("r_" in item.value for item in app.caption), "Missing release indicator"

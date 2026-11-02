@@ -35,6 +35,12 @@ These are small-cohort experimental results, **not general chess win-probability
 - Streamlit AppTest passed the default view and changing Query engine to trino, with no application exceptions/errors, correct metrics and the published release caption. This is a behavioral test, not a visual-layout review.
 - Streamlit HTTP health returned `ok` on localhost:8501.
 - Hive restarted successfully using its persisted catalog; release data was retained across service stops.
+## Revision-aware refresh and simpler UI — 2026-11-02
+
+- 16 unit/regression tests passed (93.88 seconds).
+- Real header-only probes confirmed September/October archive availability; no source PGN download was performed by this check.
+- AppTest passed with Trino as the default and the engine control inside the technical sidebar expander; switching to DuckDB and back also passed.
+- Source refresh uses HTTP validators and scope checkpoints. Recurring scheduling and partition-scoped Gold updates remain outstanding.
 ## Not yet validated
 
 - Large-scale throughput / RAM benchmarks.

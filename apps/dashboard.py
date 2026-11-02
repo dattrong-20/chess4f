@@ -36,7 +36,8 @@ if st.sidebar.button("Đọc lại dữ liệu"):
 
 if section == "Tổng quan":
     source = st.selectbox("Nguồn phân tích",["lichess","chesscom","import"])
-    engine = st.selectbox("Query engine", ["duckdb", "trino"])
+    with st.sidebar.expander("Cấu hình kỹ thuật", expanded=False):
+        engine = st.selectbox("Query engine", ["trino", "duckdb"], help="Trino đọc bản lakehouse đã công bố; DuckDB dùng để kiểm tra dữ liệu local.")
     data = get("/overview",{"source":source,"engine":engine})
     if data:
         if data.get("release_id"):
