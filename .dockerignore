@@ -5,4 +5,5 @@ artifacts
 __pycache__
 .pytest_cache
 .env
+.env.*
 logs

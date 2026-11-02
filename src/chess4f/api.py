@@ -1,4 +1,5 @@
 import json
+import httpx
 
 from fastapi import FastAPI, HTTPException, Query
 
@@ -16,8 +17,16 @@ def health():
 
 
 @app.get("/overview")
-def overview_route(source: str = "lichess"):
-    return overview(data_root(),source)
+def overview_route(source: str = "lichess", engine: str = "duckdb"):
+    if engine == "duckdb":
+        return overview(data_root(),source)
+    if engine != "trino":
+        raise HTTPException(422, "Engine must be duckdb or trino")
+    from .lakehouse import overview as trino_overview
+    try:
+        return trino_overview(data_root(), source)
+    except (ValueError, RuntimeError, OSError, httpx.HTTPError) as exc:
+        raise HTTPException(503, str(exc)) from exc
 
 
 @app.get("/players/{source}/{username}")

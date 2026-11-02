@@ -4,7 +4,7 @@
 
 chess4f is a university/portfolio project that extends a chess-opening visualization study into a data application. It ingests public game data, recognizes openings by board position, serves player profiles and records reproducible pipeline runs.
 
-> **Status: working local v0.1, not a finished distributed platform.** Delta Lake and DuckDB are implemented. Object storage, Spark, Trino/catalog and scheduled orchestration remain integration milestones; see [roadmap](docs/ROADMAP.md). The project does not claim these services are already deployed.
+> **Status: local application plus validated lakehouse batch integration.** MinIO, Spark, Hive Metastore and Trino have processed and verified a real-data release. Spark runs as one local driver (`local[2]`); this is not a multi-node cluster. Scheduled incremental operation and real-game live validation remain milestones. See [lakehouse setup](docs/LAKEHOUSE.md), [validation evidence](docs/VALIDATION.md) and [roadmap](docs/ROADMAP.md).
 
 ## What works
 

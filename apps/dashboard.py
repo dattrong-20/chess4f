@@ -36,8 +36,11 @@ if st.sidebar.button("Đọc lại dữ liệu"):
 
 if section == "Tổng quan":
     source = st.selectbox("Nguồn phân tích",["lichess","chesscom","import"])
-    data = get("/overview",{"source":source})
+    engine = st.selectbox("Query engine", ["duckdb", "trino"])
+    data = get("/overview",{"source":source,"engine":engine})
     if data:
+        if data.get("release_id"):
+            st.caption(f'Bản dữ liệu đã đối chiếu Spark/Trino: {data["release_id"]}')
         s = data["summary"]
         a,b,c = st.columns(3)
         a.metric("Ván đã nhập", f'{s["games"]:,}')
@@ -53,6 +56,7 @@ if section == "Tổng quan":
                          color_discrete_sequence=["#3155d9"], labels={"popularity_pct":"Tỷ trọng (%)", "opening_family":""})
             st.plotly_chart(fig, width="stretch")
             shown = df.head(n).melt(id_vars=["opening_family"], value_vars=["white_win_pct","draw_pct","black_win_pct"],var_name="Kết quả",value_name="Tỷ lệ (%)")
+            shown["Kết quả"] = shown["Kết quả"].map({"white_win_pct":"Trắng thắng","draw_pct":"Hòa","black_win_pct":"Đen thắng"})
             st.plotly_chart(px.bar(shown,x="Tỷ lệ (%)",y="opening_family",color="Kết quả",orientation="h",barmode="stack"),width="stretch")
             st.dataframe(df, width="stretch")
         else:

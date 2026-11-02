@@ -22,10 +22,23 @@ Scope: Chess.com Blitz in the single-player archive; 309 eligible games. Tempora
 
 These are small-cohort experimental results, **not general chess win-probability performance**. Model features: Elo difference and average Elo. Training rating range: 2545–3452. No independent calibration set. Other users, lower Elo and live board positions are outside demonstrated validity.
 
+## Lakehouse integration checkpoint — 2026-11-01
+
+- Full Windows/Python test suite: 12 passed (45.13 seconds). Includes immutable snapshot, credential setup idempotency, failed-parity pointer preservation, and release-ID validation.
+- Existing release `r_d058d9b7ef7f4e1fbe3234c2d1b6684a` is published after verification: 1,509 Silver games, 114,514 moves, 246 local Gold opening rows and 3,018 player perspectives.
+- Spark completed successfully for this release: full bidirectional multiset parity passed for openings (246 rows) and player_games (3,018 rows), followed by Delta writes to S3. Trino registered all eight source/output tables, checked source counts and both-direction Gold EXCEPT ALL, then published the release at 2026-11-01T15:43:39Z.
+
+## Serving integration — 2026-11-02
+
+- Docker API returned successful DuckDB and Trino overview queries for lichess (1,000 games), chesscom (509 games), and import (0 games).
+- `scripts/verify-serving.py` passed: counts, opening groups and every opening aggregate agree across engines for the published snapshot.
+- Streamlit AppTest passed the default view and changing Query engine to trino, with no application exceptions/errors, correct metrics and the published release caption. This is a behavioral test, not a visual-layout review.
+- Streamlit HTTP health returned `ok` on localhost:8501.
+- Hive restarted successfully using its persisted catalog; release data was retained across service stops.
 ## Not yet validated
 
 - Large-scale throughput / RAM benchmarks.
-- Spark, Trino, object storage and scheduler deployment.
+- Automated scheduler deployment, partition-scoped refresh and multi-node operation.
 - Real ongoing-game stream integration and recovery.
 - Broad-cohort model calibration and predictive accuracy.
 

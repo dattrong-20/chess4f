@@ -13,12 +13,12 @@ This roadmap separates implemented code from validated deployment. It does not r
 - [ ] End-to-end live validation on a currently running game
 - [x] Docker runtime smoke test: API health, Delta-backed overview and Streamlit health
 
-## M2 — distributed lakehouse integration
-- [ ] S3-compatible object storage with explicit credentials/secrets handling
-- [ ] Spark processing job sharing the data contract, matching local gold totals
-- [ ] Trino + appropriate metastore/catalog, registered Delta tables, SQL comparison
+## M2 — lakehouse integration (single-machine deployment)
+- [x] S3-compatible object storage with explicit credentials/secrets handling
+- [x] Spark processing job sharing the data contract, matching local gold totals
+- [x] Trino + appropriate metastore/catalog, registered Delta tables, SQL comparison
 - [ ] Controlled Docker profiles fitting 16 GB RAM (jobs need not run simultaneously)
-- [ ] Snapshot publication: readers consume a coherent run across multiple tables
+- [x] Snapshot publication: readers consume a coherent run across multiple tables
 - [ ] Partition strategy / compaction / retention without destroying required snapshots
 
 ## M3 — incremental collection and operations
