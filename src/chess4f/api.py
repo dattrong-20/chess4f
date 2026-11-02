@@ -2,8 +2,9 @@ import json
 import httpx
 
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.responses import JSONResponse
 
-from .analytics import game_detail, move_habits, overview, player_profile
+from .trino_serving import game_detail, move_habits, overview, player_profile
 from .config import data_root
 from .live import parse_game_id
 from .storage import Lake
@@ -17,16 +18,8 @@ def health():
 
 
 @app.get("/overview")
-def overview_route(source: str = "lichess", engine: str = "duckdb"):
-    if engine == "duckdb":
-        return overview(data_root(),source)
-    if engine != "trino":
-        raise HTTPException(422, "Engine must be duckdb or trino")
-    from .lakehouse import overview as trino_overview
-    try:
-        return trino_overview(data_root(), source)
-    except (ValueError, RuntimeError, OSError, httpx.HTTPError) as exc:
-        raise HTTPException(503, str(exc)) from exc
+def overview_route(source: str = "lichess"):
+    return overview(data_root(), source)
 
 
 @app.get("/players/{source}/{username}")
@@ -81,3 +74,9 @@ def prediction(source: str, speed: str, white_elo: int = Query(ge=1,le=4000), bl
         return predict(data_root(),white_elo,black_elo,source,speed)
     except ValueError as exc:
         raise HTTPException(422,str(exc)) from exc
+
+@app.exception_handler(RuntimeError)
+@app.exception_handler(OSError)
+@app.exception_handler(httpx.HTTPError)
+async def serving_unavailable(request, exc):
+    return JSONResponse(status_code=503, content={"detail": "Published lakehouse is unavailable; check Trino and the release pointer."})

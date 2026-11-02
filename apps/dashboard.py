@@ -36,9 +36,7 @@ if st.sidebar.button("Đọc lại dữ liệu"):
 
 if section == "Tổng quan":
     source = st.selectbox("Nguồn phân tích",["lichess","chesscom","import"])
-    with st.sidebar.expander("Cấu hình kỹ thuật", expanded=False):
-        engine = st.selectbox("Query engine", ["trino", "duckdb"], help="Trino đọc bản lakehouse đã công bố; DuckDB dùng để kiểm tra dữ liệu local.")
-    data = get("/overview",{"source":source,"engine":engine})
+    data = get("/overview",{"source":source})
     if data:
         if data.get("release_id"):
             st.caption(f'Bản dữ liệu đã đối chiếu Spark/Trino: {data["release_id"]}')

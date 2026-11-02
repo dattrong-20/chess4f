@@ -17,6 +17,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=8,<10"]
 lakehouse = ["boto3>=1.35,<2"]
+orchestration = ["dagster==1.13.28", "dagster-webserver==1.13.28"]
 
 [project.scripts]
 chess4f = "chess4f.cli:main"

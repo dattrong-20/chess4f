@@ -47,7 +47,7 @@ try {
     } while ($true)
     & $taskPython -m chess4f.lakehouse publish --release $release
     if ($LASTEXITCODE -ne 0) { throw 'Validation/publication failed. Previous serving pointer is unchanged.' }
-    Write-Host 'Published. Open dashboard and select Query engine: trino.'
+    Write-Host 'Published. Dashboard reads the validated release through Trino.'
 } finally {
     Pop-Location
 }

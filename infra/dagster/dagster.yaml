@@ -1,0 +1,6 @@
+telemetry:
+  enabled: false
+run_queue:
+  max_concurrent_runs: 1
+code_servers:
+  local_startup_timeout: 180

@@ -16,7 +16,7 @@ try {
             $api = Invoke-RestMethod 'http://127.0.0.1:8000/health' -TimeoutSec 5
             $trino = Invoke-RestMethod 'http://127.0.0.1:18090/v1/info' -TimeoutSec 5
             if ($api.status -eq 'ok' -and -not $trino.starting) {
-                $overview = Invoke-RestMethod 'http://127.0.0.1:8000/overview?source=lichess&engine=trino' -TimeoutSec 60
+                $overview = Invoke-RestMethod 'http://127.0.0.1:8000/overview?source=lichess' -TimeoutSec 60
                 $ready = [bool]$overview.release_id
             }
         } catch { }
@@ -25,6 +25,6 @@ try {
         Start-Sleep -Seconds 5
     } while ($true)
     Invoke-DockerChecked @('compose','up','-d','--no-build','--no-deps','dashboard')
-    Write-Host 'Dashboard: http://127.0.0.1:8501/ — select Query engine: trino'
+    Write-Host 'Dashboard: http://127.0.0.1:8501/'
     Write-Host "Published release: $($overview.release_id)"
 } finally { Pop-Location }

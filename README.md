@@ -4,7 +4,7 @@
 
 chess4f is a university/portfolio project that extends a chess-opening visualization study into a data application. It ingests public game data, recognizes openings by board position, serves player profiles and records reproducible pipeline runs.
 
-> **Status: local application plus validated lakehouse batch integration.** MinIO, Spark, Hive Metastore and Trino have processed and verified a real-data release. Spark runs as one local driver (`local[2]`); this is not a multi-node cluster. Scheduled incremental operation and real-game live validation remain milestones. See [lakehouse setup](docs/LAKEHOUSE.md), [validation evidence](docs/VALIDATION.md) and [roadmap](docs/ROADMAP.md).
+> **Status: local application plus validated lakehouse batch integration.** MinIO, Spark, Hive Metastore and Trino have processed and verified a real-data release. Spark runs as one local driver (`local[2]`); this is not a multi-node cluster. Dagster schedules and a complete manual orchestration run are validated; unattended scheduled operation and real-game live validation remain milestones. See [Dagster orchestration](docs/ORCHESTRATION.md). See [lakehouse setup](docs/LAKEHOUSE.md), [validation evidence](docs/VALIDATION.md) and [roadmap](docs/ROADMAP.md).
 
 ## What works
 
@@ -12,7 +12,8 @@ chess4f is a university/portfolio project that extends a chess-opening visualiza
 - Source-scoped stable game IDs, repeatable upserts, correction of obsolete move tails, quarantine and run manifests.
 - Opening recognition using legal board positions, a versioned Lichess catalog and the last match in the first 36 plies.
 - Public Chess.com monthly player archives and a bounded Lichess archive extractor.
-- SQL analytics through DuckDB reading only active files from committed Delta snapshots.
+- Trino-only application analytics pinned to a validated published release; DuckDB remains internal for transformation, training and reference checks.
+- Dagster source checks and capped refresh schedules, with Spark validation before release publication.
 - Player results, openings, opponents, game replay and personal move frequencies with an explicit historical cutoff.
 - Experimental **pre-game** logistic-regression W/D/L baseline using Elo, chronological evaluation and a prior-frequency baseline.
 - Lichess public delayed stream receiver, raw event journal and observer UI. Not a Board API client, engine or player-assistance tool.
@@ -36,7 +37,9 @@ flowchart LR
   A[PGN / public APIs] --> B[Immutable source objects + Bronze Delta]
   B --> C[Silver: games / moves / quarantine]
   C --> D[Gold: openings / player games]
-  D --> E[DuckDB SQL]
+  D --> K[Immutable S3 release / Spark Gold]
+  K --> E[Trino SQL]
+  O[Dagster schedules] --> A
   E --> F[FastAPI]
   F --> G[Streamlit]
   C --> H[Temporal model experiment]

@@ -77,9 +77,12 @@ def test_chesscom_link_is_stable_id(lake_root,pgn_file):
     assert game_detail(lake_root,"chesscom:123456789") is not None
 
 
-def test_api_reads_delta(lake_root, pgn_file, monkeypatch):
+def test_api_contract_with_local_fixture(lake_root, pgn_file, monkeypatch):
     monkeypatch.setenv("CHESS4F_DATA", str(lake_root))
     ingest_pgn(lake_root, pgn_file, "lichess")
+    from chess4f import api, analytics
+    for name in ("overview", "player_profile", "game_detail", "move_habits"):
+        monkeypatch.setattr(api, name, getattr(analytics, name))
     client = TestClient(app)
     assert client.get("/health").status_code == 200
     assert client.get("/overview").json()["summary"]["games"] == 2

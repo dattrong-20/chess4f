@@ -29,16 +29,16 @@ def overview(root, source="lichess"):
             "versions": lake.versions()}
 
 
-def player_profile(root, source, username):
-    with Lake(root).connection() as con:
+def player_profile(root, source, username, *, connection_factory=None):
+    with (connection_factory(root) if connection_factory else Lake(root).connection()) as con:
         parameters = [source, username.lower()]
-        summary = records(con.execute("""SELECT count(*) games, sum((outcome='win')::INT) wins,
-            sum((outcome='draw')::INT) draws, sum((outcome='loss')::INT) losses,
+        summary = records(con.execute("""SELECT count(*) games, sum(CASE WHEN outcome='win' THEN 1 ELSE 0 END) wins,
+            sum(CASE WHEN outcome='draw' THEN 1 ELSE 0 END) draws, sum(CASE WHEN outcome='loss' THEN 1 ELSE 0 END) losses,
             100*avg(score) score_pct, min(played_at) first_game, max(played_at) last_game
             FROM gold_player_games WHERE source=? AND player=?""", parameters))[0]
         openings = records(con.execute("""SELECT opening_family, color, speed, count(*) games,
             100*avg(score) score_pct FROM gold_player_games WHERE source=? AND player=?
-            GROUP BY ALL ORDER BY games DESC""", parameters))
+            GROUP BY opening_family, color, speed ORDER BY games DESC""", parameters))
         opponents = records(con.execute("""SELECT opponent, count(*) games, 100*avg(score) score_pct
             FROM gold_player_games WHERE source=? AND player=? GROUP BY opponent
             ORDER BY games DESC, opponent LIMIT 20""", parameters))
@@ -50,8 +50,8 @@ def player_profile(root, source, username):
                 coverage="Imported games only; not necessarily full platform history")
 
 
-def game_detail(root, game_key):
-    with Lake(root).connection() as con:
+def game_detail(root, game_key, *, connection_factory=None):
+    with (connection_factory(root) if connection_factory else Lake(root).connection()) as con:
         games = records(con.execute("SELECT * FROM silver_games WHERE game_key=?", [game_key]))
         if not games:
             return None
@@ -59,7 +59,7 @@ def game_detail(root, game_key):
     return dict(game=games[0], moves=moves)
 
 
-def move_habits(root, source, username, fen, before, exclude_game=None):
+def move_habits(root, source, username, fen, before, exclude_game=None, *, connection_factory=None):
     board = chess.Board(fen)
     if not board.is_valid():
         raise ValueError("Invalid chess position")
@@ -68,7 +68,7 @@ def move_habits(root, source, username, fen, before, exclude_game=None):
     if cutoff.tzinfo is None:
         raise ValueError("before must include timezone")
     cutoff = cutoff.astimezone(timezone.utc).isoformat()
-    with Lake(root).connection() as con:
+    with (connection_factory(root) if connection_factory else Lake(root).connection()) as con:
         rows = records(con.execute("""SELECT uci, count(DISTINCT game_key) n_games
             FROM silver_moves WHERE source=? AND player=? AND position_key=?
             AND played_at < ? AND game_key <> ? GROUP BY uci ORDER BY n_games DESC, uci""",
