@@ -94,7 +94,7 @@ class HeaderFilter(chess.pgn.GameBuilder):
         h = self.game.headers
         if not h.get("UTCDate", h.get("Date", "")).startswith(self.day.replace("-", ".")):
             return chess.pgn.SKIP
-        if not re.match(r"^Rated Blitz\b", h.get("Event", "")):
+        if not re.match(r"^Rated (Blitz|Rapid)\b", h.get("Event", "")):
             return chess.pgn.SKIP
         return super().end_headers()
 
@@ -148,7 +148,7 @@ def lichess_day(root, day, limit=1000):
                                 break
                             manifest["scanned"] += 1
                             h = game.headers
-                            if h.get("UTCDate", h.get("Date", "")).startswith(day.replace("-", ".")) and re.match(r"^Rated Blitz\b", h.get("Event", "")):
+                            if h.get("UTCDate", h.get("Date", "")).startswith(day.replace("-", ".")) and re.match(r"^Rated (Blitz|Rapid)\b", h.get("Event", "")):
                                 out.write(str(game) + "\n\n")
                                 manifest["selected"] += 1
                             if manifest["scanned"] % 10000 == 0:

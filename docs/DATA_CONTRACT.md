@@ -13,7 +13,7 @@
 - `silver/games`: one current record per game key; derived month, Elo fields, score and opening label.
 - `silver/moves`: one row per game key/ply, position before the move and FEN after it. Re-import replaces existing move rows for that game, including an obsolete tail.
 - `silver/quarantine`: rejected record + reason + run; historical rejection records are audit evidence, not current invalid-game counts.
-- `gold/openings`: recognized Rated Blitz by platform/month/rating group/family.
+- `gold/openings`: recognized rated games by platform/month/speed/rating group/family.
 - `gold/player_games`: two perspective rows per completed game. Never count these rows as distinct global games.
 
 ## Opening rules

@@ -11,21 +11,24 @@ def records(cursor):
     return [dict(zip(cols, row)) for row in cursor.fetchall()]
 
 
-def overview(root, source="lichess"):
+def overview(root, source="lichess", speed="blitz"):
     lake = Lake(root)
+    speed_clause = "" if speed == "all" else " AND speed=?"
+    parameters = [source] if speed == "all" else [source, speed]
     with lake.connection() as con:
-        counts = records(con.execute("""SELECT count(*) games,
+        counts = records(con.execute(f"""SELECT count(*) games,
             count(opening_family) recognized, count(DISTINCT opening_family) opening_families,
-            min(played_at) first_game, max(played_at) last_game FROM silver_games WHERE source=?""",[source]))[0]
-        top = records(con.execute("""SELECT opening_family, sum(n_games)::BIGINT n_games,
+            min(played_at) first_game, max(played_at) last_game FROM silver_games
+            WHERE source=?{speed_clause}""", parameters))[0]
+        top = records(con.execute(f"""SELECT opening_family, sum(n_games)::BIGINT n_games,
             100*sum(white_score_sum)/sum(n_games) white_score_pct,
             100*sum(white_wins)/sum(n_games) white_win_pct,
             100*sum(draws)/sum(n_games) draw_pct,
             100*sum(black_wins)/sum(n_games) black_win_pct,
             100*sum(n_games)/sum(sum(n_games)) OVER () popularity_pct
-            FROM gold_openings WHERE source=? GROUP BY opening_family ORDER BY n_games DESC""",[source]))
-    return {"summary": counts, "openings": top, "source":source,
-            "scope": "Rated Blitz, recognized games only for opening charts; imported coverage, not platform-wide population",
+            FROM gold_openings WHERE source=?{speed_clause} GROUP BY opening_family ORDER BY n_games DESC""", parameters))
+    return {"summary": counts, "openings": top, "source": source, "speed": speed,
+            "scope": "Rated games by selected speed, recognized only for opening charts; imported coverage, not platform-wide population",
             "versions": lake.versions()}
 
 
@@ -45,6 +48,15 @@ def player_profile(root, source, username, *, connection_factory=None):
         history = records(con.execute("""SELECT game_key, played_at, opponent, color, speed, rating,
             outcome, opening_family FROM gold_player_games WHERE source=? AND player=?
             ORDER BY played_at DESC LIMIT 200""", parameters))
+        # A player can appear only as an opponent inside someone else's archive.
+        # Count rows whose source object actually belongs to this account so the
+        # UI can distinguish "their history" from "games against them".
+        pattern = (f"%player/{username.lower()}/%" if source == "chesscom"
+                   else f"%games/user/{username.lower()}%")
+        own = records(con.execute("""SELECT count(*) own_archive_games FROM silver_games
+            WHERE source=? AND (white=? OR black=?) AND lower(source_uri) LIKE ?""",
+            [source, username.lower(), username.lower(), pattern]))[0]["own_archive_games"]
+    summary["own_archive_games"] = own
     return dict(source=source, player=username.lower(), summary=summary,
                 openings=openings, opponents=opponents, history=history,
                 coverage="Imported games only; not necessarily full platform history")

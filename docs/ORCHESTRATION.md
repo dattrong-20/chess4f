@@ -17,7 +17,7 @@ Docker, the lakehouse services, and Dagster daemon must remain running. Closing 
 | Job | Schedule (Asia/Barnaul, UTC+7) | Action |
 |---|---|---|
 | source_check_job | Every day 07:00 | HEAD-only availability/revision check for previous calendar month |
-| monthly_refresh_job | Sunday 08:00 | At most 1,000 matching Rated Blitz games of previous month, then release pipeline if local versions changed |
+| monthly_refresh_job | Sunday 08:00 | At most 1,000 matching Rated Blitz/Rapid games of previous month, then release pipeline if local versions changed |
 
 Schedules default to RUNNING. The Dagster UI can pause them or launch a manual run. One queued run executes at a time. A manual month uses config `ops.collect_source.config.month: "2026-10"`; `limit` must be 1–5,000. This selects an integration sample, not a representative monthly population. Full archive backfill remains an explicitly invoked CLI operation.
 

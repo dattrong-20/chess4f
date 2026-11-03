@@ -8,7 +8,9 @@ from theme import COLORS, WDL, style
 
 def render(payload):
     st.header("Khai cuộc · mức sử dụng và kết quả")
-    st.caption(f'Bản dữ liệu: {payload["release_id"]} · Rated Blitz đã nhận diện')
+    labels = {"blitz": "Blitz", "rapid": "Cờ 10 phút (Rapid)", "bullet": "Bullet",
+              "classical": "Classical", "all": "tất cả thể thức"}
+    st.caption(f'Bản dữ liệu: {payload["release_id"]} · {labels.get(payload.get("speed"), payload.get("speed"))} đã nhận diện')
     st.info("Tỷ lệ điểm Trắng = (số ván Trắng thắng + 0,5 × số ván hòa) / tổng số ván × 100%. Đây là kết quả thực chiến, không phải xác suất thắng của một thế cờ hay tác động nhân quả của khai cuộc.")
     df = pd.DataFrame(payload["rows"])
     if df.empty:

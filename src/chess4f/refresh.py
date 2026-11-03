@@ -11,7 +11,7 @@ from .sources import lichess_day, month_plan
 from .storage import atomic_json, utc_now
 
 
-PROCESSOR_VERSION = "2-lichess-game-url"
+PROCESSOR_VERSION = "3-lichess-rapid"
 
 
 def probe_month(month):

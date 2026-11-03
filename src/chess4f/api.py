@@ -18,10 +18,12 @@ def health():
 
 
 @app.get("/overview")
-def overview_route(source: str = "lichess"):
+def overview_route(source: str = "lichess", speed: str = "blitz"):
     if source not in ("lichess", "chesscom", "import"):
         raise HTTPException(422, "Unknown source")
-    return overview(data_root(), source)
+    if speed not in ("blitz", "rapid", "bullet", "classical", "all"):
+        raise HTTPException(422, "Unknown speed")
+    return overview(data_root(), source, speed)
 
 
 @app.get("/players/{source}/{username}")
@@ -85,9 +87,9 @@ async def serving_unavailable(request, exc):
     return JSONResponse(status_code=503, content={"detail": "Published lakehouse is unavailable; check Trino and the release pointer."})
 
 @app.get("/openings/cube")
-def openings(source: str = "lichess"):
+def openings(source: str = "lichess", speed: str = "blitz"):
     try:
-        return opening_cube(data_root(), source)
+        return opening_cube(data_root(), source, speed)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
 

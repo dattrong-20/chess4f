@@ -5,7 +5,7 @@ backgrounds, subtle gridlines and clean hover labels.
 """
 
 COLORS = dict(
-    primary="#3155d9",
+    primary="#6FA83C",
     white="#247ba0",
     draw="#aab2bd",
     black="#ed9135",

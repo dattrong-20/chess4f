@@ -104,7 +104,7 @@ def rebuild_gold(lake):
                    sum((result='1/2-1/2')::INTEGER)::BIGINT draws,
                    sum((result='0-1')::INTEGER)::BIGINT black_wins,
                    sum(white_score)::DOUBLE white_score_sum
-            FROM silver_games WHERE rated AND speed='blitz' AND opening_family IS NOT NULL
+            FROM silver_games WHERE rated AND opening_family IS NOT NULL
             GROUP BY ALL
         """).to_arrow_reader(65536)
         lake.overwrite("gold/openings", openings)

@@ -26,6 +26,9 @@ def release_id(value):
     return value
 
 
+SPEEDS = ("blitz", "rapid", "bullet", "classical", "all")
+
+
 def setup(project):
     path = Path(project) / ".env.lakehouse"
     # Never replace working credentials on a repeated setup.
@@ -191,27 +194,31 @@ def validate_publish(root, project, rid):
         return manifest
 
 
-def overview(root, source):
+def overview(root, source, speed="blitz"):
     if source not in ("lichess", "chesscom", "import"):
         raise ValueError("Unknown source")
+    if speed not in SPEEDS:
+        raise ValueError("Unknown speed")
     pointer = Path(root) / "published/latest.json"
     if not pointer.exists():
         raise RuntimeError("No validated lakehouse release has been published")
     manifest = json.loads(pointer.read_text(encoding="utf-8"))
     rid = release_id(manifest["release_id"])
+    speed_clause = "" if speed == "all" else f" AND speed='{speed}'"
     summary = sql(f"SELECT count(*) games, count(opening_family) recognized, "
                   f"count(DISTINCT opening_family) opening_families, min(played_at) first_game, "
-                  f"max(played_at) last_game FROM chess.{rid}.silver_games WHERE source='{source}'")[0]
+                  f"max(played_at) last_game FROM chess.{rid}.silver_games "
+                  f"WHERE source='{source}'{speed_clause}")[0]
     rows = sql(f"""SELECT opening_family, sum(n_games) n_games,
       100.0*sum(white_score_sum)/sum(n_games) white_score_pct,
       100.0*sum(white_wins)/sum(n_games) white_win_pct,
       100.0*sum(draws)/sum(n_games) draw_pct,
       100.0*sum(black_wins)/sum(n_games) black_win_pct,
       100.0*sum(n_games)/sum(sum(n_games)) OVER () popularity_pct
-      FROM chess.{rid}.spark_openings WHERE source='{source}'
+      FROM chess.{rid}.spark_openings WHERE source='{source}'{speed_clause}
       GROUP BY opening_family ORDER BY n_games DESC""")
-    return {"summary": summary, "openings": rows, "source": source, "engine": "trino",
-            "release_id": rid, "versions": manifest["source_versions"]}
+    return {"summary": summary, "openings": rows, "source": source, "speed": speed,
+            "engine": "trino", "release_id": rid, "versions": manifest["source_versions"]}
 
 
 def main():

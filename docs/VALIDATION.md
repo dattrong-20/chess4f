@@ -114,3 +114,12 @@ With the Docker stack already running and the host Dagster restarted through `sc
 - Searching quangbufi returned 203 games, but they came entirely from another player's archive (odoiheud: 197 games, dambi333: 6). Those are opponent rows, not the account's own history; only 12 of them are blitz.
 - The sync request covering that period was for qbui, not quangbufi, and returned zero games for every month. The correct fix is to sync the exact username quangbufi.
 - Added a Chess.com existence check when a month is empty: a 404 now raises Chess.com username not found instead of completing as an empty month. Two tests cover existing-but-empty and misspelled accounts; suite is 44 passed.
+
+## 2026-11-03 rapid dimension and player provenance
+
+- Gold aggregates, overview and the C1-C7 cube now carry an explicit speed dimension (blitz/rapid/bullet/classical/all). Lichess collection accepts Rated Rapid and `PROCESSOR_VERSION` moved to `3-lichess-rapid`; the Sep/Oct refresh added 267 and 249 rapid games.
+- Published release `r_1abbfd6782e24e408845143d6098a665`: **6,014 games** (2,527 Lichess / 3,487 Chess.com), 473,595 move rows, 1,115 opening aggregate rows, 12,028 player-perspective rows. Spark parity and Trino publication passed.
+- Verified: `/overview?source=chesscom&speed=rapid` returns 21 opening families; `/openings/cube?source=chesscom&speed=rapid` has 55 rows / 86 rated games; Lichess rapid has 512 recognized games.
+- Player profiles now report `own_archive_games` from source URIs, so an account that only appears as an opponent is no longer treated as imported: the UI explains the provenance and the auto-fetch triggers. A misspelled Chess.com username raises "not found" instead of an empty month.
+- UI restyle: light chess.com-inspired palette (green accent), card metrics, rounded containers and the classic green board palette for replay/live.
+- Full suite: **46 passed**; `verify-serving.py` passed; screenshots recaptured.

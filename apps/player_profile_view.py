@@ -13,6 +13,8 @@ def render(data):
     if not s["games"]:
         st.info("Chưa có ván của tài khoản này trong dữ liệu đã nhập. Mở mục Tải / cập nhật lịch sử ở phía trên để đồng bộ tài khoản, hoặc thử Chess.com / hikaru với bộ demo hiện tại.")
         return
+    if int(s.get("own_archive_games") or 0) == 0:
+        st.info("Các ván đang hiển thị đến từ lịch sử của đối thủ, chưa phải lịch sử của chính tài khoản này. Hãy nhập đúng username và để hệ thống tải lịch sử của tài khoản.")
     for col, key, label in zip(st.columns(4), ["games", "wins", "draws", "losses"], ["Số ván", "Thắng", "Hòa", "Thua"]):
         col.metric(label, thousands(int(s.get(key) or 0)), border=True)
     wins, draws, losses = int(s.get("wins") or 0), int(s.get("draws") or 0), int(s.get("losses") or 0)

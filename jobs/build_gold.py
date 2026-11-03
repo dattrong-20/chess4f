@@ -31,7 +31,7 @@ try:
         sum(CASE WHEN result='1/2-1/2' THEN 1 ELSE 0 END) draws,
         sum(CASE WHEN result='0-1' THEN 1 ELSE 0 END) black_wins,
         sum(white_score) white_score_sum
-      FROM games WHERE rated AND speed='blitz' AND opening_family IS NOT NULL
+      FROM games WHERE rated AND opening_family IS NOT NULL
       GROUP BY source, year_month, speed, rating_group, opening_family
     """)
     players = spark.sql("""

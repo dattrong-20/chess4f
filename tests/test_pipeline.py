@@ -90,8 +90,9 @@ def test_api_contract_with_local_fixture(lake_root, pgn_file, monkeypatch):
     monkeypatch.setenv("CHESS4F_DATA", str(lake_root))
     ingest_pgn(lake_root, pgn_file, "lichess")
     from chess4f import api, analytics
-    for name in ("overview", "player_profile", "game_detail", "move_habits"):
+    for name in ("player_profile", "game_detail", "move_habits"):
         monkeypatch.setattr(api, name, getattr(analytics, name))
+    monkeypatch.setattr(api, "overview", lambda root, source, speed: analytics.overview(root, source))
     client = TestClient(app)
     assert client.get("/health").status_code == 200
     assert client.get("/overview").json()["summary"]["games"] == 2
@@ -105,3 +106,23 @@ def test_lichess_game_url_and_legacy_url_share_identity(lake_root, pgn_file):
     run = ingest_pgn(lake_root, pgn_file, "lichess")
     assert run["accepted"] == 2 and run["quarantined"] == 0
     assert overview(lake_root)["summary"]["games"] == 2
+
+
+def test_rapid_games_reach_gold_aggregates(lake_root, pgn_file):
+    rapid = pgn("RaPiD123").replace('[TimeControl "180+2"]', '[TimeControl "600+0"]')
+    rapid = rapid.replace('[Event "Rated Blitz game"]', '[Event "Rated Rapid game"]')
+    pgn_file.write_text(rapid, encoding="utf-8")
+    ingest_pgn(lake_root, pgn_file, "lichess")
+    with Lake(lake_root).connection() as con:
+        speeds = dict(con.execute("SELECT speed, count(*) FROM gold_openings GROUP BY speed").fetchall())
+    assert speeds.get("rapid") == 1
+    assert "blitz" not in speeds
+
+
+def test_player_profile_separates_own_archive_from_opponent_rows(lake_root, pgn_file):
+    ingest_pgn(lake_root, pgn_file, "lichess", source_uri="https://lichess.org/api/games/user/alice")
+    profile = player_profile(lake_root, "lichess", "alice")
+    assert profile["summary"]["own_archive_games"] == 2
+    opponent = player_profile(lake_root, "lichess", "bob")
+    assert opponent["summary"]["games"] == 2
+    assert opponent["summary"]["own_archive_games"] == 0

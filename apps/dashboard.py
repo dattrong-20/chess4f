@@ -9,6 +9,17 @@ import plotly.express as px
 import streamlit as st
 
 st.set_page_config(page_title="chess4f · Chess intelligence", page_icon="♞", layout="wide")
+st.markdown("""
+<style>
+  .block-container {padding-top: 2.2rem; max-width: 1200px;}
+  [data-testid="stMetric"] {background: #ffffff; border: 1px solid #e5e5df; border-radius: 12px; padding: 14px 16px;}
+  [data-testid="stMetricValue"] {font-weight: 700;}
+  [data-testid="stSidebar"] {border-right: 1px solid #e5e5df;}
+  h1, h2, h3 {letter-spacing: -0.01em;}
+  .stButton > button[kind="primary"] {background: #81B64C; border-color: #81B64C;}
+  [data-testid="stToolbar"], [data-testid="stDecoration"] {display: none;}
+</style>
+""", unsafe_allow_html=True)
 API = os.environ.get("CHESS4F_API", "http://127.0.0.1:8000")
 
 
@@ -23,6 +34,10 @@ def get(path, params=None):
 
 
 SOURCE_NAMES = {"lichess": "Lichess", "chesscom": "Chess.com", "import": "PGN nhập thủ công"}
+SPEEDS = ["blitz", "rapid", "bullet", "classical", "all"]
+SPEED_NAMES = {"blitz": "Blitz", "rapid": "Cờ 10 phút (Rapid)", "bullet": "Bullet",
+               "classical": "Classical", "all": "Tất cả thể thức"}
+BOARD_COLORS = {"square light": "#EEEED2", "square dark": "#769656"}
 st.title("chess4f")
 st.caption("Khám phá khai cuộc · Hiểu lịch sử thi đấu · Theo dõi dữ liệu")
 st.sidebar.title("chess4f")
@@ -33,8 +48,10 @@ if st.sidebar.button("Đọc lại dữ liệu"):
 
 if section == "Tổng quan":
     st.subheader("Tổng quan nguồn dữ liệu")
-    source = st.selectbox("Nguồn phân tích",["lichess","chesscom","import"], format_func=SOURCE_NAMES.get)
-    data = get("/overview",{"source":source})
+    a, b = st.columns(2)
+    source = a.selectbox("Nguồn phân tích",["lichess","chesscom","import"], format_func=SOURCE_NAMES.get)
+    speed = b.selectbox("Thể thức", SPEEDS, format_func=SPEED_NAMES.get, index=0)
+    data = get("/overview",{"source":source,"speed":speed})
     if data:
         s = data["summary"]
         if not s["games"]:
@@ -80,11 +97,13 @@ if section == "Tổng quan":
             with st.expander("Xem bảng số liệu"):
                 st.dataframe(df, width="stretch", hide_index=True)
         else:
-            st.warning("Chưa có Rated Blitz đủ điều kiện. Hồ sơ cá nhân vẫn hỗ trợ các thể thức khác.")
+            st.warning("Chưa có ván đủ điều kiện cho thể thức này. Hồ sơ cá nhân vẫn hỗ trợ các thể thức khác.")
 elif section == "Khai cuộc C1–C7":
     from opening_analysis import render
-    source = st.selectbox("Nguồn phân tích", ["lichess", "chesscom", "import"], format_func=SOURCE_NAMES.get)
-    payload = get("/openings/cube", {"source": source})
+    a, b = st.columns(2)
+    source = a.selectbox("Nguồn phân tích", ["lichess", "chesscom", "import"], format_func=SOURCE_NAMES.get)
+    speed = b.selectbox("Thể thức", SPEEDS, format_func=SPEED_NAMES.get, key="cube_speed")
+    payload = get("/openings/cube", {"source": source, "speed": speed})
     if payload:
         render(payload)
 elif section == "Hồ sơ cá nhân":
@@ -96,8 +115,8 @@ elif section == "Hồ sơ cá nhân":
     player_sync(API, source, username)
     if username:
         data = get(f"/players/{source}/{username}")
-        if data and data["summary"]["games"] == 0 and auto:
-            data = auto_sync_if_missing(API, source, username)
+        if data and source != "import" and auto and data["summary"].get("own_archive_games", 0) == 0:
+            data = auto_sync_if_missing(API, source, username) or data
         if data:
             from player_profile_view import render
             render(data)
@@ -111,7 +130,7 @@ elif section == "Ván đấu":
             board = chess.Board(moves[ply-1]["fen_after"]) if ply else chess.Board()
             a,b = st.columns([1,1])
             with a:
-                st.image(chess.svg.board(board,size=450), width=450)
+                st.image(chess.svg.board(board,size=450, colors=BOARD_COLORS), width=450)
             with b:
                 st.write(f'{game["white"]} — {game["black"]}')
                 st.write("Nhãn tại mốc:",moves[ply-1]["opening_name"] if ply else "Chưa có")
@@ -157,7 +176,7 @@ elif section == "Live observer":
                 st.subheader(" — ".join(names))
                 st.caption(f'Nhận gần nhất: {data.get("received_at", "chưa có")} · {data["source_delay"]}')
                 if data.get("fen"):
-                    st.image(chess.svg.board(chess.Board(data["fen"]),size=440), width=440)
+                    st.image(chess.svg.board(chess.Board(data["fen"]),size=440, colors=BOARD_COLORS), width=440)
                 label = data.get("opening")
                 st.write("Nhãn khớp gần nhất:", f'{label["name"]} ({label["eco"]})' if label else "Chưa nhận diện")
                 st.caption(f'Số sự kiện đã nhận: {data.get("received_events", 0)}')
