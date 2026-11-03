@@ -21,11 +21,11 @@ chess4f is a university/portfolio project that extends a chess-opening visualiza
 
 ## Demo data and honest scope
 
-Validated on 29 October 2026 with:
+Demo sources (bounded samples; see validation notes for publication status):
 
 | Source | Scope | Games |
 |---|---|---:|
-| Lichess | First 1,000 matching Rated Blitz games on 2026-09-01 from the monthly archive | 1,000 |
+| Lichess | First 1,000 matching Rated Blitz games from each September and October 2026 archive | 2,000 |
 | Chess.com | Public `hikaru` archive for September 2026 | 509 |
 
 The Lichess demo is a **bounded integration sample**, not a random or representative monthly sample. The Chess.com sample is one player's history, not platform-wide data. Sources are selectable and not silently pooled. Data, models, credentials and virtual environments are excluded from Git.
@@ -82,10 +82,10 @@ Start API and UI in two terminals:
 ## Docker
 
 ```powershell
-docker compose up --build -d api dashboard
-docker compose --profile jobs run --rm pipeline catalog
-docker compose --profile jobs run --rm pipeline status
-docker compose down
+docker compose --env-file .env.lakehouse up --build -d api dashboard
+docker compose --env-file .env.lakehouse --profile jobs run --rm pipeline catalog
+docker compose --env-file .env.lakehouse --profile jobs run --rm pipeline status
+docker compose --env-file .env.lakehouse down
 ```
 
 Do not run the native and Docker servers on the same ports simultaneously. `./data:/data` keeps project data beside the checkout. Docker images still live in Docker Desktop's own disk image; changing checkout location does not relocate that disk image.
@@ -141,3 +141,10 @@ Independent student project; not affiliated with Chess.com or Lichess. Source/pl
 ## Revision-aware refresh
 
 See [source refresh](docs/REFRESH.md) for header-only availability checks and skipping an unchanged previously ingested scope. The dashboard defaults to Trino; DuckDB remains inside advanced technical settings for local comparison.
+
+
+## Unified deployment and opening analysis
+
+See [unified Compose](docs/COMPOSE.md). All Docker services use project `chess4f`; Dagster remains on the Windows host. Use `scripts/start-demo.ps1` with the existing `.env.lakehouse`. The external Hive volume retains its legacy name to preserve metadata.
+
+The dashboard includes a C1–C7 opening analysis workspace: popularity, observed monthly usage, W/D/L, Elo comparison, popularity versus score, variations, and monthly scores. Its aggregate cube is queried through Trino and pinned to one published release. Filters and minimum sample sizes are visible. Two sampled months demonstrate comparisons, not population-level trends.

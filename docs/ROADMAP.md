@@ -24,19 +24,20 @@ This roadmap separates implemented code from validated deployment. It does not r
 ## M3 — incremental collection and operations
 - [x] Calendar month planner and bounded sequential backfill CLI
 - [x] Failed/limited/completed-source-scan registry
-- [ ] Source ETag/checksum change detection, automated refresh policy
+- [x] HTTP ETag/revision detection and capped Dagster refresh policy (not a full-archive checksum)
 - [ ] Adjacent-source UTC boundary coverage and coverage ledger
-- [ ] Scheduler, retry/backoff policy, run dashboard and source-specific quotas
+- [x] Dagster schedules, bounded read/publication retries, run UI and capped Lichess refresh
+- [ ] Additional source quotas and unattended multi-day validation
 - [ ] Efficient no-op re-import and partition-scoped gold refresh
 - [ ] Fresh player sync from UI using bounded background jobs
 
 ## M4 — product and prediction
-- [ ] Restore all C1–C7 views with explicit filters/denominators
+- [x] Restore all C1–C7 views with explicit filters/denominators; real Trino cube parity and seven AppTest views passed
 - [ ] Better UI, rating trend and source coverage indicators
 - [ ] Broader training cohort; calibration and stronger temporal/group evaluation
 - [ ] Position-based outcome model (separate from pre-game baseline)
 - [ ] Personalized vs population move frequency backoff with uncertainty
-- [ ] Do not publish performance claims from the elite-player sample as general accuracy
+- [x] Experimental model limitations documented; no general-accuracy claim
 
 ## M5 — live (optional)
 - [ ] Discover game from username through a supported documented endpoint
@@ -46,7 +47,7 @@ This roadmap separates implemented code from validated deployment. It does not r
 - [ ] Kafka integration if it adds replay/consumer value; do not pretend JSONL is Kafka
 
 ## GitHub / CV
-- [x] Public repository push and Linux CI result (9 tests passed)
+- [x] Public repository and Linux CI workflow; latest local suite: 24 tests
 - [ ] Screenshots and reproducible demonstration recording
 - [ ] CV description describes only validated capabilities
 - [ ] Benchmark actual throughput, latency, memory and recovery behavior

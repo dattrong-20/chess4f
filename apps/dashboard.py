@@ -29,7 +29,7 @@ st.markdown("""<style>
 </style>""", unsafe_allow_html=True)
 st.title("♞ chess4f")
 st.caption("Chess analytics • Delta Lake • Player intelligence • Delayed live observation")
-section = st.sidebar.radio("Không gian phân tích", ["Tổng quan", "Hồ sơ cá nhân", "Ván đấu", "Dự đoán thử nghiệm", "Live observer", "Truy vết dữ liệu"])
+section = st.sidebar.radio("Không gian phân tích", ["Tổng quan", "Khai cuộc C1–C7", "Hồ sơ cá nhân", "Ván đấu", "Dự đoán thử nghiệm", "Live observer", "Truy vết dữ liệu"])
 st.sidebar.info("Dữ liệu hiển thị chỉ bao gồm phần đã nhập. Tần suất lịch sử không phải xác suất thắng hay gợi ý nước tốt nhất.")
 if st.sidebar.button("Đọc lại dữ liệu"):
     st.rerun()
@@ -46,7 +46,7 @@ if section == "Tổng quan":
         b.metric("Nhận diện được", f'{s["recognized"]:,}')
         c.metric("Nhóm khai cuộc", s["opening_families"])
         st.caption(f'Phạm vi đã nhập: {s["first_game"]} → {s["last_game"]}')
-        st.warning("Demo Lichess: 1.000 ván đầu khớp ngày 01/09/2026, không đại diện toàn ngày/tháng. Demo Chess.com: lịch sử một tài khoản, không đại diện toàn nền tảng. Hai nguồn được phân tích riêng.")
+        st.warning("Lichess: mẫu giới hạn ở đầu các tệp tháng đã nhập, không đại diện toàn ngày/tháng. Demo Chess.com: lịch sử một tài khoản, không đại diện toàn nền tảng. Hai nguồn được phân tích riêng.")
         st.info("Biểu đồ khai cuộc: chỉ Rated Blitz đã nhận diện. Mẫu số tỷ trọng gồm mọi nhóm đủ điều kiện, không chỉ Top N.")
         df = pd.DataFrame(data["openings"])
         if not df.empty:
@@ -60,6 +60,12 @@ if section == "Tổng quan":
             st.dataframe(df, width="stretch")
         else:
             st.warning("Chưa có Rated Blitz đủ điều kiện. Hồ sơ cá nhân vẫn hỗ trợ các thể thức khác.")
+elif section == "Khai cuộc C1–C7":
+    from opening_analysis import render
+    source = st.selectbox("Nguồn phân tích", ["lichess", "chesscom", "import"])
+    payload = get("/openings/cube", {"source": source})
+    if payload:
+        render(payload)
 elif section == "Hồ sơ cá nhân":
     source = st.selectbox("Nền tảng", ["chesscom", "lichess", "import"])
     username = st.text_input("Username", "hikaru")

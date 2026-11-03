@@ -52,7 +52,7 @@ def transform(game, source, source_uri, run_id, record_id, catalog):
     we, be = elo("WhiteElo"), elo("BlackElo")
     site = h.get("Link", "") if source == "chesscom" else h.get("Site", "")
     site = site or h.get("Site", "")
-    patterns = {"lichess": r"https?://(?:www\.)?lichess\.org/([A-Za-z0-9]{8})(?:[/?#]|$)",
+    patterns = {"lichess": r"https?://(?:www\.)?lichess\.org/(?:game/)?([A-Za-z0-9]{8})(?:[/?#]|$)",
                 "chesscom": r"https?://(?:www\.)?chess\.com/game/(?:live|daily)/(\d+)(?:[/?#]|$)"}
     match = re.search(patterns.get(source, r"(?!)"), site)
     if source in ("lichess", "chesscom") and not match:

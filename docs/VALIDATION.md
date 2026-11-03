@@ -49,3 +49,15 @@ These are small-cohort experimental results, **not general chess win-probability
 - Broad-cohort model calibration and predictive accuracy.
 
 Update this document only from executed checks; never mark generated configuration as deployed infrastructure.
+
+
+## 2026-11-03 unified Compose and October recovery
+
+- Project `chess4f` now contains all application/lakehouse Docker services. Legacy external Hive volume and MinIO bind data retained.
+- October sample initially quarantined 1,000 games because Site URLs contained `/game/ID`. Parser now accepts both supported URL shapes with stable game identity. Reimport accepted 1,000 and quarantined 0. Historical failed-quality run remains recorded.
+- Clean rows: Lichess September 1,000 + October 1,000; Chess.com September 509. First-match samples are not representative of monthly populations.
+- Dagster run `ca7aed44-2668-4b81-a494-f423ef61a26a` succeeded. Published release `r_87d57c48317d40be890a7ec9f6b84047`; Spark parity: 455 opening aggregate rows and 5,018 player-perspective rows.
+- 24 unit tests passed. Serving integration passed on the new release: overview/profile/replay/habits and Streamlit AppTest.
+- Model artifact remains the earlier small-sample pregame experiment, not a live board evaluation model. No expanded model-performance claim is made from the new ingestion.
+
+- `scripts/verify-openings.py` passed all C1–C7 views, empty-filter handling, and Trino cube count/outcome invariants: 1,990 recognized Rated Blitz Lichess games.

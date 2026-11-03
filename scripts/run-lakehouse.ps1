@@ -21,9 +21,11 @@ function Wait-Http {
     throw "Service did not become ready: $Url"
 }
 try {
+    docker volume create chess4f-lake_metastore | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot initialize persistent metastore volume' }
     & $taskPython -m chess4f.lakehouse setup
     if ($LASTEXITCODE -ne 0) { throw 'Setup failed' }
-    $composeArgs = @('compose', '--env-file', '.env.lakehouse', '-f', 'compose.lakehouse.yaml')
+    $composeArgs = @('compose', '--env-file', '.env.lakehouse', '-f', 'compose.yaml')
     if ($Build) { Invoke-CheckedDocker ($composeArgs + @('build', 'object-store', 'metastore', 'spark')) }
     Invoke-CheckedDocker ($composeArgs + @('stop', 'trino'))
     Invoke-CheckedDocker ($composeArgs + @('up', '-d', '--no-build', 'object-store', 'metastore'))

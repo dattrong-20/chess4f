@@ -11,6 +11,9 @@ from .sources import lichess_day, month_plan
 from .storage import atomic_json, utc_now
 
 
+PROCESSOR_VERSION = "2-lichess-game-url"
+
+
 def probe_month(month):
     url = f"https://database.lichess.org/standard/lichess_db_standard_rated_{month}.pgn.zst"
     with httpx.Client(timeout=30, follow_redirects=True, headers={"User-Agent": user_agent()}) as client:
@@ -44,7 +47,8 @@ def refresh_months(root, start, end=None, limit=1000, check_only=False):
                 elif (source["validator"] is not None
                       and previous.get("committed_validator") == source["validator"]
                       and "committed_limit" in previous
-                      and previous["committed_limit"] == limit):
+                      and previous["committed_limit"] == limit
+                      and previous.get("processor_version") == PROCESSOR_VERSION):
                     attempt["status"] = "unchanged_source_validator"
                 elif check_only:
                     attempt["status"] = "refresh_required"
@@ -55,7 +59,9 @@ def refresh_months(root, start, end=None, limit=1000, check_only=False):
                     if not after["available"] or after["validator"] != source["validator"]:
                         raise RuntimeError("Source changed during download; retry before ingestion")
                     run = ingest_pgn(root, pgn, "lichess", source_uri=uri)
-                    attempt.update(status="limited" if limit else "complete_source_scan",
+                    if run.get("accepted", 0) == 0:
+                        raise RuntimeError("No games accepted; inspect ingestion quarantine before committing refresh")
+                    attempt.update(processor_version=PROCESSOR_VERSION, status="limited" if limit else "complete_source_scan",
                                    committed_validator=source["validator"], committed_limit=limit,
                                    run_id=run["run_id"], source_manifest=selection,
                                    committed_at=utc_now())

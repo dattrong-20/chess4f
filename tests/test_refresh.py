@@ -12,7 +12,7 @@ def configure(monkeypatch):
     monkeypatch.setattr(refresh, "lichess_day", lambda *args: ("fixture.pgn", "fixture", {"status": "limited"}))
     def ingest(*args, **kwargs):
         calls.append(1)
-        return {"run_id": str(len(calls))}
+        return {"run_id": str(len(calls)), "accepted": 1}
     monkeypatch.setattr(refresh, "ingest_pgn", ingest)
     return revision, calls
 
@@ -59,3 +59,13 @@ def test_revision_change_mid_download_not_ingested(tmp_path, monkeypatch):
     with pytest.raises(RuntimeError, match="changed during download"):
         refresh.refresh_months(tmp_path, "2026-09", "2026-09")
     assert not calls
+
+
+def test_all_quarantined_does_not_commit(tmp_path, monkeypatch):
+    configure(monkeypatch)
+    monkeypatch.setattr(refresh, "ingest_pgn", lambda *a, **kw: {"run_id": "bad", "accepted": 0})
+    with pytest.raises(RuntimeError, match="No games accepted"):
+        refresh.refresh_months(tmp_path, "2026-10")
+    checkpoint = json.loads((tmp_path / "metadata/refresh/2026-10.json").read_text())
+    assert checkpoint["status"] == "failed"
+    assert "committed_validator" not in checkpoint

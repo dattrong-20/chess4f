@@ -6,7 +6,7 @@ services:
     ports: ["127.0.0.1:8000:8000"]
     environment:
       CHESS4F_DATA: /data
-      CHESS4F_TRINO: http://host.docker.internal:18090
+      CHESS4F_TRINO: http://trino:8080
     volumes: ["./data:/data"]
     mem_limit: 2g
     cpus: 2
@@ -39,3 +39,61 @@ services:
     volumes: ["./data:/data"]
     mem_limit: 4g
     cpus: 2
+  object-store:
+    image: chess4f-minio:2025-10-15
+    build: ./infra/minio
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${CHESS4F_S3_USER:?Run setup-lakehouse first}
+      MINIO_ROOT_PASSWORD: ${CHESS4F_S3_PASSWORD:?Run setup-lakehouse first}
+    ports: ["127.0.0.1:19000:9000", "127.0.0.1:19001:9001"]
+    volumes: ["./data/object-store:/data"]
+    mem_limit: 768m
+    cpus: 1
+  metastore:
+    image: chess4f-hive:4.0.0
+    build: ./infra/hive
+    entrypoint: ["bash", "/config/metastore.sh"]
+    environment:
+      SERVICE_NAME: metastore
+      AWS_ACCESS_KEY_ID: ${CHESS4F_S3_USER:?Run setup-lakehouse first}
+      AWS_SECRET_ACCESS_KEY: ${CHESS4F_S3_PASSWORD:?Run setup-lakehouse first}
+      AWS_REGION: us-east-1
+      SERVICE_OPTS: "-Xmx512m -Djavax.jdo.option.ConnectionURL=jdbc:derby:;databaseName=/state/metastore_db;create=true"
+    volumes:
+      - "./infra/hive/metastore.sh:/config/metastore.sh:ro"
+      - "metastore:/state"
+    mem_limit: 1g
+    cpus: 1
+  trino:
+    image: trinodb/trino:484
+    ports: ["127.0.0.1:18090:8080"]
+    environment:
+      CHESS4F_S3_USER: ${CHESS4F_S3_USER:?Run setup-lakehouse first}
+      CHESS4F_S3_PASSWORD: ${CHESS4F_S3_PASSWORD:?Run setup-lakehouse first}
+    volumes:
+      - "./infra/trino/config.properties:/etc/trino/config.properties:ro"
+      - "./infra/trino/jvm.config:/etc/trino/jvm.config:ro"
+      - "./infra/trino/catalog:/etc/trino/catalog:ro"
+    depends_on: [object-store, metastore]
+    mem_limit: 2300m
+    cpus: 2
+  spark:
+    build:
+      context: ./infra/spark
+    image: chess4f-spark:local
+    profiles: ["compute"]
+    environment:
+      AWS_ACCESS_KEY_ID: ${CHESS4F_S3_USER:?Run setup-lakehouse first}
+      AWS_SECRET_ACCESS_KEY: ${CHESS4F_S3_PASSWORD:?Run setup-lakehouse first}
+      AWS_REGION: us-east-1
+      CHESS4F_RELEASE: ${CHESS4F_RELEASE:-}
+    volumes: ["./jobs:/jobs:ro"]
+    entrypoint: ["/opt/spark/bin/spark-submit", "--master", "local[2]", "--driver-memory", "1400m", "/jobs/build_gold.py"]
+    depends_on: [object-store]
+    mem_limit: 3g
+    cpus: 2
+volumes:
+  metastore:
+    name: chess4f-lake_metastore
+    external: true

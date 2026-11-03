@@ -62,3 +62,19 @@ def move_habits(root, source, username, fen, before, exclude_game=None):
 
 
 overview = lakehouse.overview
+
+
+def opening_cube(root, source):
+    if source not in ("lichess", "chesscom", "import"):
+        raise ValueError("Unknown source")
+    with connection(root) as con:
+        cursor = con.execute("""SELECT year_month, rating_group, opening_family, opening_name,
+            count(*) n_games,
+            sum(CASE WHEN result='1-0' THEN 1 ELSE 0 END) white_wins,
+            sum(CASE WHEN result='1/2-1/2' THEN 1 ELSE 0 END) draws,
+            sum(CASE WHEN result='0-1' THEN 1 ELSE 0 END) black_wins
+            FROM silver_games WHERE source=? AND rated AND speed='blitz' AND opening_family IS NOT NULL
+            GROUP BY year_month, rating_group, opening_family, opening_name
+            ORDER BY year_month, rating_group, opening_family, opening_name""", [source])
+        rows = [dict(zip(cursor.columns, row)) for row in cursor.fetchall()]
+        return {"release_id": con.release, "source": source, "rows": rows}

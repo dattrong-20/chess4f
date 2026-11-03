@@ -8,6 +8,8 @@ Successful scope/revision checkpoints allow later runs to skip an unchanged HTTP
 
 The refresh lock prevents simultaneous refresh runners. Pipeline ingestion retains stable-ID upsert semantics; it does not delete old games omitted from a revised archive. Collection updates local Delta data only. Publish a new Spark/Trino release with `scripts/run-lakehouse.ps1` before expecting the default dashboard to display it.
 
-This command is suitable for an external scheduler, but no recurring job has been installed or enabled yet. Existing `sync-months` remains the explicit sequential backfill command; `refresh-months` is the revision-aware entry point.
+Dagster now supplies enabled schedules: daily 07:00 source checks and Sunday 08:00 capped refresh (Asia/Barnaul). See ORCHESTRATION.md; the machine and daemon must remain running. Existing `sync-months` remains the explicit sequential backfill command; `refresh-months` is the revision-aware entry point.
 
 Verified on 2026-11-02: HEAD probes for September and October 2026 returned available archives with ETag, Last-Modified and Content-Length. The check-only run did not download or import either archive. Automated tests cover revision/scope changes, check-only behavior, absent sources, ingestion failure and changes during download.
+
+Refresh checkpoints include a processor version: a parser fix can invalidate a skip even when the upstream HTTP validator is unchanged. An ingestion with zero accepted games fails the refresh instead of committing a successful source revision. Quarantine and historical run manifests remain available for diagnosis.

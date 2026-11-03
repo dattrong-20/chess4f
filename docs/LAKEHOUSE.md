@@ -47,10 +47,10 @@ Subsequent releases omit `-Build`. The script stops only chess4f's Trino before 
 Start/rebuild the main API and dashboard after source updates:
 
 ```powershell
-docker compose up --build -d api dashboard
+docker compose --env-file .env.lakehouse up --build -d api dashboard
 ```
 
-On the overview page choose `Query engine = trino`. The displayed release ID ties the chart to validated Spark outputs. Other pages still use the local DuckDB store in this milestone. Switching back to DuckDB displays current local data, which can be newer than the last published S3 release.
+All application analytics use Trino; there is no engine selector or silent local fallback. The displayed release ID ties the chart to validated Spark outputs. DuckDB remains an internal processing and reference dependency.
 
 Inspect a release:
 
@@ -79,7 +79,7 @@ With an unchanged local dataset and its published snapshot, run:
 .\.venv\Scripts\python.exe scripts/verify-serving.py
 ```
 
-The check compares DuckDB and Trino counts and every opening aggregate for all three supported sources, then uses Streamlit AppTest to change the query engine and verify the displayed metrics and release caption. It requires running API, S3, Hive and Trino services; it is not part of isolated unit CI. Differences are expected if the local dataset was updated after publication: publish a new release before comparing.
+The check compares DuckDB and Trino counts and every opening aggregate for all three supported sources, then verifies profiles, replay, move habits and Streamlit metrics/release caption without a query-engine selector. It requires running API, S3, Hive and Trino services; it is not part of isolated unit CI. Differences are expected if the local dataset was updated after publication: publish a new release before comparing.
 
 Hive uses the Hadoop 3.3.6 S3A libraries bundled with its image. Credentials come from environment variables. On restart it checks the Derby schema, not just whether its directory exists. An incomplete catalog stops with an explicit error; preserve its directory before recovery. Do not delete the Docker volume to fix a startup error.
 

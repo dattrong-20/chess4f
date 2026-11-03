@@ -88,3 +88,11 @@ def test_api_contract_with_local_fixture(lake_root, pgn_file, monkeypatch):
     assert client.get("/overview").json()["summary"]["games"] == 2
     assert client.get("/games/missing").status_code == 404
     assert client.get("/players/lichess/alice").json()["summary"]["games"] == 2
+
+
+def test_lichess_game_url_and_legacy_url_share_identity(lake_root, pgn_file):
+    ingest_pgn(lake_root, pgn_file, "lichess")
+    pgn_file.write_text(pgn_file.read_text().replace("lichess.org/", "lichess.org/game/"))
+    run = ingest_pgn(lake_root, pgn_file, "lichess")
+    assert run["accepted"] == 2 and run["quarantined"] == 0
+    assert overview(lake_root)["summary"]["games"] == 2

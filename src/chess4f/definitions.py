@@ -67,7 +67,7 @@ def prepare_release(context, source_report):
 def spark_gold(context, release):
     if release is None:
         return None
-    command = ["docker", "compose", "--env-file", ".env.lakehouse", "-f", "compose.lakehouse.yaml",
+    command = ["docker", "compose", "--env-file", ".env.lakehouse", "-f", "compose.yaml",
                "run", "--rm", "--no-deps", "-e", f"CHESS4F_RELEASE={lakehouse.release_id(release)}", "spark"]
     result = subprocess.run(command, cwd=PROJECT, text=True, encoding="utf-8", errors="replace",
                             capture_output=True, timeout=1800)

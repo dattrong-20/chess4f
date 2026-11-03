@@ -179,7 +179,7 @@ def overview(root, source):
         raise ValueError("Unknown source")
     pointer = Path(root) / "published/latest.json"
     if not pointer.exists():
-        raise ValueError("No validated lakehouse release has been published")
+        raise RuntimeError("No validated lakehouse release has been published")
     manifest = json.loads(pointer.read_text(encoding="utf-8"))
     rid = release_id(manifest["release_id"])
     summary = sql(f"SELECT count(*) games, count(opening_family) recognized, "

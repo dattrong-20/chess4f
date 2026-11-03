@@ -4,7 +4,7 @@ import httpx
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import JSONResponse
 
-from .trino_serving import game_detail, move_habits, overview, player_profile
+from .trino_serving import game_detail, move_habits, overview, player_profile, opening_cube
 from .config import data_root
 from .live import parse_game_id
 from .storage import Lake
@@ -19,6 +19,8 @@ def health():
 
 @app.get("/overview")
 def overview_route(source: str = "lichess"):
+    if source not in ("lichess", "chesscom", "import"):
+        raise HTTPException(422, "Unknown source")
     return overview(data_root(), source)
 
 
@@ -80,3 +82,10 @@ def prediction(source: str, speed: str, white_elo: int = Query(ge=1,le=4000), bl
 @app.exception_handler(httpx.HTTPError)
 async def serving_unavailable(request, exc):
     return JSONResponse(status_code=503, content={"detail": "Published lakehouse is unavailable; check Trino and the release pointer."})
+
+@app.get("/openings/cube")
+def openings(source: str = "lichess"):
+    try:
+        return opening_cube(data_root(), source)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
