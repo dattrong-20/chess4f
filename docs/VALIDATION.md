@@ -139,3 +139,9 @@ With the Docker stack already running and the host Dagster restarted through `sc
 - Synthetic benchmark on an idle machine: **100,000 games / 600,000 moves in 562.26 s** ingestion and **565.13 s** including snapshot. The earlier 1,252 s run was contaminated by a concurrent backfill and is not the reference figure.
 - `scripts/verify-serving.py` passed on the 103k release; C1-C7 passed and the UI still renders.
 - Coverage caveat now stronger: every Lichess month is the first 10,000 matching games, all on that month's first day, so the dataset is ten single-day slices, not ten months of chess.
+
+## 2026-11-03 dambi333 partial-history fix
+
+- `dambi333` showed 7 games because an earlier Chess.com sync ingested only August 2026 before the metastore failure; September (1) and October (12) were never fetched. The Chess.com PubAPI confirms 7 + 1 + 12 = 20.
+- Auto-fetch did not fire because the profile already had 7 games from its own archive; the zero-own-games guard does not cover partial history.
+- A targeted Chess.com sync for 2026-08..2026-10 added the missing games and published `r_cf01a8750aff4573b0b28fc1e7eff7d4`: 103,511 games, 7,047,963 moves, 3,500 Chess.com games. The profile now reports 20 games (11W / 2D / 7L).
