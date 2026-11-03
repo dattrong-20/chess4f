@@ -23,3 +23,7 @@ Each demo month is capped at 1,000 first-matching games. Repeated schedules do n
 
 ## Runtime
 Services require Docker Desktop running. Use scripts/start-demo.ps1; Dagster uses scripts/start-dagster.ps1 on the Windows host. Restarting the PC does not automatically start Dagster. See DEMO.md and ORCHESTRATION.md.
+
+## Player UI follow-up
+Player results, opening repertoire, frequent opponents and rating history now have charts. Empty search results explicitly state that search does not download platform history. History charts/export are limited to the latest 200 imported games; summary metrics use all imported games. AppTest passed against the live Trino API.
+

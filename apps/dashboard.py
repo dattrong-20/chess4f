@@ -93,17 +93,8 @@ elif section == "Hồ sơ cá nhân":
     if username:
         data = get(f"/players/{source}/{username}")
         if data:
-            s = data["summary"]
-            for col, key, label in zip(st.columns(4), ["games","wins","draws","losses"], ["Số ván","Thắng","Hòa","Thua"]):
-                col.metric(label, s.get(key) or 0)
-            st.caption(data["coverage"])
-            left, right = st.columns(2)
-            left.subheader("Khai cuộc theo màu quân / thể thức")
-            left.dataframe(data["openings"],width="stretch")
-            right.subheader("Đối thủ gặp nhiều nhất")
-            right.dataframe(data["opponents"],width="stretch")
-            st.subheader("Lịch sử ván đã nhập")
-            st.dataframe(data["history"],width="stretch")
+            from player_profile_view import render
+            render(data)
 elif section == "Ván đấu":
     game_key = st.text_input("Khóa ván: nền_tảng:ID")
     if game_key:

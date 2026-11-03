@@ -61,3 +61,6 @@ Update this document only from executed checks; never mark generated configurati
 - Model artifact remains the earlier small-sample pregame experiment, not a live board evaluation model. No expanded model-performance claim is made from the new ingestion.
 
 - `scripts/verify-openings.py` passed all C1–C7 views, empty-filter handling, and Trino cube count/outcome invariants: 1,990 recognized Rated Blitz Lichess games.
+
+- Player profile UI: AppTest verified Hikaru 509-game KPIs, four chart panels, explicit 200-row history coverage, and an unknown-player empty state. Ratings are shown separately by speed; no rating series is pooled across time controls.
+
