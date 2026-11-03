@@ -11,11 +11,12 @@ dependencies = [
   "deltalake>=0.25,<2", "duckdb>=1.2,<2", "pyarrow>=18,<24",
   "python-chess>=1.999,<2", "httpx>=0.28,<1", "filelock>=3.17,<4",
   "fastapi>=0.115,<1", "uvicorn>=0.34,<1", "zstandard>=0.23,<1",
-  "streamlit>=1.42,<2", "plotly>=6,<7", "scikit-learn>=1.6,<2"
+  "streamlit>=1.57,<2", "plotly>=6,<7", "scikit-learn>=1.6,<2"
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<10"]
+demo = ["playwright>=1.64,<2"]
 lakehouse = ["boto3>=1.35,<2"]
 orchestration = ["dagster==1.13.28", "dagster-webserver==1.13.28"]
 

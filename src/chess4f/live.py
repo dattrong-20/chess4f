@@ -13,7 +13,7 @@ from .storage import atomic_json, digest, utc_now
 
 
 def parse_game_id(value):
-    match = re.fullmatch(r"(?:https://lichess\.org/)?([A-Za-z0-9]{8})(?:/(?:white|black))?/?", value.strip())
+    match = re.fullmatch(r"(?:https://lichess\.org/(?:game/)?)?([A-Za-z0-9]{8})(?:/(?:white|black))?/?", value.strip())
     if not match:
         raise ValueError("Use an 8-character Lichess game id or public game URL")
     return match.group(1)
@@ -38,12 +38,14 @@ class LiveState:
             board = chess.Board(event["fen"])
             if not board.is_valid():
                 raise ValueError("Invalid FEN from source")
-            label = self.catalog.match(board)
-            self.value.update(fen=board.fen(), last_move=event.get("lm"),
-                              white_clock=event.get("wc"), black_clock=event.get("bc"),
+            label = self.catalog.match(board) if board.ply() <= 36 else None
+            self.value.update(fen=board.fen(), last_move=event.get("lm", self.value.get("last_move")),
+                              white_clock=event.get("wc", self.value.get("white_clock")), black_clock=event.get("bc", self.value.get("black_clock")),
                               status="observing", current_position_match=label)
             if label:
                 self.value["opening"] = label
+        if "createdAt" in event:
+            self.value["created_at_ms"] = event["createdAt"]
         if "players" in event:
             self.value["players"] = event["players"]
         if "status" in event:
@@ -53,7 +55,7 @@ class LiveState:
         return True
 
 
-def observe(root, game_id, max_events=None):
+def observe(root, game_id, max_events=None, stop_event=None):
     game_id = parse_game_id(game_id)
     root = Path(root)
     folder = root / "live" / game_id
@@ -63,12 +65,17 @@ def observe(root, game_id, max_events=None):
     url = f"https://lichess.org/api/stream/game/{game_id}"
     atomic_json(folder / "state.json", state.value)
     # Bounded retries; raw events allow later replay. No evasion of source delay.
+    started = time.monotonic()
     for attempt in range(4):
         try:
             with httpx.Client(timeout=httpx.Timeout(30, read=180), headers={"User-Agent": user_agent()}) as client:
                 with client.stream("GET", url) as response, (folder / "events.jsonl").open("a", encoding="utf-8") as out:
                     response.raise_for_status()
                     for line in response.iter_lines():
+                        if (stop_event and stop_event.is_set()) or time.monotonic()-started > 21600:
+                            state.value["status"] = "stopped"
+                            atomic_json(folder / "state.json", state.value)
+                            return state.value
                         if not line.strip():
                             continue
                         event = json.loads(line)
@@ -81,6 +88,13 @@ def observe(root, game_id, max_events=None):
                             atomic_json(folder / "state.json", state.value)
                             return state.value
             state.value["status"] = "stream_closed"
+            status = state.value.get("platform_status")
+            if isinstance(status, dict):
+                status = status.get("name") or status.get("id")
+            if status in ("mate","resign","stalemate","timeout","draw","outoftime","cheat","variantEnd",30,31,32,33,34,35,36,60):
+                from .requests_queue import enqueue
+                request = enqueue(root, {"kind":"finished_game", "game_id":game_id})
+                state.value["ingestion_request_id"] = request["id"]
             break
         except (httpx.HTTPError, ValueError) as exc:
             state.value.update(status="reconnecting", error=str(exc), retry=attempt + 1)

@@ -1,0 +1,59 @@
+"""Capture the real local dashboard in a separate headless Chromium session."""
+from pathlib import Path
+import re
+import os
+from playwright.sync_api import sync_playwright, expect
+
+out = Path("artifacts/demo")
+out.mkdir(parents=True, exist_ok=True)
+with sync_playwright() as p:
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context(viewport={"width":1440,"height":1000}, record_video_dir=str(out/"video"), record_video_size={"width":1440,"height":1000})
+    page = context.new_page()
+    page.set_default_timeout(90000)
+    page.goto("http://127.0.0.1:8501/", wait_until="domcontentloaded")
+    expect(page.get_by_test_id("stMetricValue").first).to_contain_text(re.compile(r"\d"),timeout=90000)
+    expect(page.locator(".js-plotly-plot").first).to_be_visible(timeout=90000)
+    page.wait_for_timeout(2000)
+    page.set_viewport_size({"width":1440,"height":1800})
+    page.wait_for_timeout(800)
+    page.screenshot(path=str(out/"01-overview.png"),full_page=True)
+    page.set_viewport_size({"width":1440,"height":1000})
+    assert page.get_by_text("Bản dữ liệu đã đối chiếu Spark/Trino:",exact=False).count()==0
+    assert page.get_by_role("radio",name="Dự đoán thử nghiệm",exact=True).count()==0
+    assert page.get_by_role("radio",name="Truy vết dữ liệu",exact=True).count()==0
+    page.get_by_test_id("stSidebar").get_by_text("Hồ sơ cá nhân",exact=True).click()
+    expect(page.get_by_text("Kết quả thực chiến",exact=True)).to_be_visible(timeout=90000)
+    expect(page.locator(".js-plotly-plot").first).to_be_visible(timeout=90000)
+    expect(page.locator(".js-plotly-plot")).to_have_count(4,timeout=90000)
+    page.wait_for_timeout(2000)
+    page.set_viewport_size({"width":1440,"height":1800})
+    page.wait_for_timeout(800)
+    page.screenshot(path=str(out/"02-player.png"),full_page=True)
+    page.set_viewport_size({"width":1440,"height":1000})
+    page.get_by_text("Tải / cập nhật lịch sử từ nền tảng",exact=True).click()
+    expect(page.get_by_role("button",name="Đồng bộ lịch sử",exact=True)).to_be_visible()
+    page.set_viewport_size({"width":1440,"height":1800})
+    page.wait_for_timeout(800)
+    page.screenshot(path=str(out/"03-sync-form.png"),full_page=True)
+    page.set_viewport_size({"width":1440,"height":1000})
+    page.get_by_test_id("stSidebar").get_by_text("Live observer",exact=True).click()
+    page.get_by_label("Lichess game ID (8 ký tự)",exact=True).fill(os.environ.get("CHESS4F_DEMO_GAME","eRIlxQlE"))
+    page.get_by_label("Lichess game ID (8 ký tự)",exact=True).press("Enter")
+    expect(page.get_by_text("Nhãn khớp gần nhất:",exact=False)).to_be_visible(timeout=90000)
+    expect(page.get_by_test_id("stImage").locator("img")).to_be_visible(timeout=90000)
+    page.set_viewport_size({"width":1440,"height":1800})
+    page.wait_for_timeout(800)
+    page.screenshot(path=str(out/"04-live.png"),full_page=True)
+    page.set_viewport_size({"width":1440,"height":1000})
+    page.get_by_test_id("stSidebar").get_by_text("Nhập dữ liệu",exact=True).click()
+    expect(page.get_by_role("button",name="Xếp lịch nhập dữ liệu")).to_be_visible()
+    page.set_viewport_size({"width":1440,"height":1800})
+    page.wait_for_timeout(800)
+    page.screenshot(path=str(out/"05-backfill.png"),full_page=True)
+    page.set_viewport_size({"width":1440,"height":1000})
+    video = page.video
+    context.close()
+    video.save_as(str(out/"chess4f-demo.webm"))
+    browser.close()
+print("VISUAL_CAPTURE_COMPLETE",out.resolve())

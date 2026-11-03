@@ -31,7 +31,7 @@ def month_plan(start, end=None):
     return months
 
 
-def chesscom_archive(root, username, month):
+def chesscom_archive(root, username, month, allow_empty=False):
     if not re.fullmatch(r"[A-Za-z0-9_-]{2,50}", username):
         raise ValueError("Invalid username")
     date.fromisoformat(month + "-01")
@@ -54,6 +54,8 @@ def chesscom_archive(root, username, month):
                 if item.get("url"):
                     game.headers["Link"] = item["url"]
                 games.append(str(game))
+    if not games and allow_empty:
+        return None, url
     if not games:
         raise ValueError("Source returned no PGNs for this player and month; no fabricated fallback")
     path = folder / f"{month}-{stamp}.pgn"
@@ -141,3 +143,47 @@ def lichess_day(root, day, limit=1000):
     if not manifest["selected"]:
         raise ValueError("No matching games; inspect source manifest")
     return path, url, manifest
+
+
+def lichess_player(root, username, month, limit=1000):
+    import json
+    from datetime import datetime, timezone
+    if not re.fullmatch(r"[A-Za-z0-9_-]{2,50}", username):
+        raise ValueError("Invalid username")
+    first = date.fromisoformat(month + "-01")
+    end = date(first.year + (first.month == 12), first.month % 12 + 1, 1)
+    since = int(datetime.combine(first, datetime.min.time(), timezone.utc).timestamp()*1000)
+    until = int(datetime.combine(end, datetime.min.time(), timezone.utc).timestamp()*1000)-1
+    uri = f"https://lichess.org/api/games/user/{username.lower()}"
+    folder = Path(root) / "landing/players" / username.lower()
+    folder.mkdir(parents=True, exist_ok=True)
+    path = folder / (month + "-" + utc_now().replace(":", "-") + ".pgn")
+    count = 0
+    with httpx.Client(timeout=httpx.Timeout(30, read=180), headers={"User-Agent":user_agent(), "Accept":"application/x-ndjson"}) as client:
+        with client.stream("GET", uri, params={"since":since,"until":until,"max":limit,"pgnInJson":"true","ongoing":"false","finished":"true","sort":"dateDesc"}) as response, path.open("w", encoding="utf-8") as out:
+            response.raise_for_status()
+            for line in response.iter_lines():
+                if not line.strip():
+                    continue
+                item = json.loads(line)
+                if item.get("pgn"):
+                    out.write(item["pgn"] + "\n\n")
+                    count += 1
+    return (path if count else None), uri
+
+
+def lichess_finished(root, game_id):
+    from .live import parse_game_id
+    game_id = parse_game_id(game_id)
+    uri = f"https://lichess.org/game/export/{game_id}"
+    with httpx.Client(timeout=60, headers={"User-Agent":user_agent(),"Accept":"application/x-chess-pgn"}) as client:
+        response = client.get(uri, params={"evals":"false", "clocks":"false"})
+        response.raise_for_status()
+    game = chess.pgn.read_game(io.StringIO(response.text))
+    if game is None or game.headers.get("Result") not in ("1-0","0-1","1/2-1/2"):
+        raise ValueError("Game is not finished; nothing imported")
+    folder = Path(root) / "landing/finished"
+    folder.mkdir(parents=True, exist_ok=True)
+    path = folder / (game_id + ".pgn")
+    path.write_text(response.text, encoding="utf-8")
+    return path, uri

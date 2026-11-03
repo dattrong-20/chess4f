@@ -68,9 +68,10 @@ def snapshot(root):
                 raise ValueError("Import games before exporting a release")
             with lake.connection() as con:
                 for name in TABLES:
-                    table = con.execute(f"SELECT * FROM {name.replace('/', '_')}").to_arrow_table()
+                    count = con.execute(f"SELECT count(*) FROM {name.replace('/', '_')}").fetchone()[0]
+                    table = con.execute(f"SELECT * FROM {name.replace('/', '_')}").fetch_record_batch(rows_per_batch=65536)
                     write_deltalake(str(destination / name), table)
-                    manifest["tables"][name] = {"rows": table.num_rows, "snapshot_version": 0}
+                    manifest["tables"][name] = {"rows": count, "snapshot_version": 0}
         manifest["status"] = "exported"
     except Exception as exc:
         manifest.update(status="failed", error=str(exc))
@@ -101,7 +102,7 @@ def upload(root, project, rid):
     files = sorted(p for p in folder.rglob("*") if p.is_file() and p.name != "manifest.json")
     for path in files:
         s3.upload_file(str(path), "chess4f", prefix + path.relative_to(folder).as_posix())
-    for path in sorted((Path(root) / "bronze_objects").glob("*.pgn")):
+    for path in sorted(p for p in (Path(root) / "bronze_objects").iterdir() if p.suffix in (".pgn", ".jsonl")):
         s3.upload_file(str(path), "chess4f", f"bronze_objects/{path.name}")
     manifest.update(status="uploaded", object_count=len(files), uploaded_at=utc_now())
     s3.put_object(Bucket="chess4f", Key=prefix + "manifest.json", Body=json.dumps(manifest).encode())

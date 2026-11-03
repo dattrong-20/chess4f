@@ -39,7 +39,8 @@ app = AppTest.from_file(str(Path(__file__).resolve().parents[1] / "apps/dashboar
 app.run(timeout=180)
 assert not app.exception and not app.error
 assert not any(item.label == "Query engine" for item in app.selectbox)
-assert any("r_" in item.value for item in app.caption)
+assert "Dự đoán thử nghiệm" not in app.sidebar.radio[0].options
+assert "Truy vết dữ liệu" not in app.sidebar.radio[0].options
 app.sidebar.radio[0].set_value("Hồ sơ cá nhân").run(timeout=180)
 assert not app.exception and not app.error
 print("TRINO_ONLY_OVERVIEW_PROFILE_REPLAY_HABITS_AND_UI_PASSED")

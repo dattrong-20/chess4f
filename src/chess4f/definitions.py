@@ -106,5 +106,35 @@ source_check_schedule = dg.ScheduleDefinition(job=source_check_job, cron_schedul
 refresh_schedule = dg.ScheduleDefinition(job=monthly_refresh_job, cron_schedule="0 8 * * 0",
     execution_timezone=ZONE, default_status=dg.DefaultScheduleStatus.RUNNING)
 
-defs = dg.Definitions(jobs=[source_check_job, monthly_refresh_job],
+class RequestConfig(dg.Config):
+    request_id: str
+
+
+@dg.op
+def process_user_request(context, config: RequestConfig):
+    from .requests_queue import process
+    return process(data_root(), PROJECT, config.request_id, context)
+
+
+@dg.job(executor_def=dg.in_process_executor)
+def user_request_job():
+    process_user_request()
+
+
+@dg.sensor(job=user_request_job, minimum_interval_seconds=15, default_status=dg.DefaultSensorStatus.RUNNING)
+def user_request_sensor(context):
+    folder = data_root() / "requests"
+    for path in sorted(folder.glob("*.json")):
+        item = json.loads(path.read_text(encoding="utf-8"))
+        if item["status"] == "running" and item.get("dagster_run_id"):
+            run = context.instance.get_run_by_id(item["dagster_run_id"])
+            if run and run.is_finished and not run.is_success:
+                from .storage import atomic_json, utc_now
+                item.update(status="failed",stage="failed",error="Dagster run interrupted; retry resumes completed months",updated_at=utc_now())
+                atomic_json(path,item)
+        if item["status"] == "queued":
+            yield dg.RunRequest(run_key=item["id"], run_config={"ops":{"process_user_request":{"config":{"request_id":item["id"]}}}})
+
+
+defs = dg.Definitions(jobs=[source_check_job, monthly_refresh_job, user_request_job], sensors=[user_request_sensor],
                       schedules=[source_check_schedule, refresh_schedule])

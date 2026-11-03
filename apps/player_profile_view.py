@@ -8,7 +8,7 @@ def render(data):
     s = data["summary"]
     st.subheader(f'Hồ sơ · {data["player"]}')
     if not s["games"]:
-        st.info("Chưa có ván của tài khoản này trong dữ liệu đã nhập. Tìm kiếm ở đây không tự tải lịch sử từ nền tảng. Bạn có thể thử Chess.com / hikaru với bộ demo hiện tại.")
+        st.info("Chưa có ván của tài khoản này trong dữ liệu đã nhập. Mở mục Tải / cập nhật lịch sử ở phía trên để đồng bộ tài khoản, hoặc thử Chess.com / hikaru với bộ demo hiện tại.")
         return
     for col, key, label in zip(st.columns(4), ["games", "wins", "draws", "losses"], ["Số ván", "Thắng", "Hòa", "Thua"]):
         col.metric(label, f'{int(s.get(key) or 0):,}', border=True)

@@ -54,7 +54,8 @@ def live(game_id: str):
     path = data_root() / "live" / game_id / "state.json"
     if not path.exists():
         raise HTTPException(404, "Start observer with chess4f live GAME_ID")
-    return json.loads(path.read_text(encoding="utf-8"))
+    from .live_service import state
+    return state(data_root(), game_id)
 
 
 @app.get("/runs")
@@ -89,3 +90,61 @@ def openings(source: str = "lichess"):
         return opening_cube(data_root(), source)
     except ValueError as exc:
         raise HTTPException(422, str(exc)) from exc
+
+
+@app.post("/requests", status_code=202)
+def submit_request(payload: dict):
+    from .requests_queue import enqueue
+    try:
+        return enqueue(data_root(), payload)
+    except (ValueError, KeyError, TypeError) as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@app.get("/requests/{request_id}")
+def request_status(request_id: str):
+    from .requests_queue import read_request
+    try:
+        return read_request(data_root(), request_id)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    except FileNotFoundError:
+        raise HTTPException(404, "Request not found")
+
+
+@app.get("/live-discovery/{username}")
+def live_discovery(username: str):
+    from .live_service import discover
+    try:
+        return discover(username)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@app.post("/live-observers/{game_id}")
+def start_observer(game_id: str):
+    from .live_service import start
+    try:
+        return start(data_root(), game_id)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@app.delete("/live-observers/{game_id}")
+def stop_observer(game_id: str):
+    from .live_service import stop
+    try:
+        return stop(game_id)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+
+
+@app.post("/requests/{request_id}/retry", status_code=202)
+def retry_user_request(request_id: str):
+    from .requests_queue import retry_request
+    try:
+        return retry_request(data_root(), request_id)
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from exc
+    except FileNotFoundError:
+        raise HTTPException(404, "Request not found")

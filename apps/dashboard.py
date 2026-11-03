@@ -1,4 +1,4 @@
-"""Read-only Streamlit front end; queries the API, not source platforms."""
+"""Streamlit front end: Trino-backed analytics and queued ingestion via API."""
 import os
 
 import chess
@@ -27,7 +27,7 @@ st.title("chess4f")
 st.caption("Khám phá khai cuộc · Hiểu lịch sử thi đấu · Theo dõi dữ liệu")
 st.sidebar.title("chess4f")
 st.sidebar.caption("CHESS ANALYTICS WORKSPACE")
-section = st.sidebar.radio("Không gian phân tích", ["Tổng quan", "Khai cuộc C1–C7", "Hồ sơ cá nhân", "Ván đấu", "Dự đoán thử nghiệm", "Live observer", "Truy vết dữ liệu"])
+section = st.sidebar.radio("Không gian phân tích", ["Tổng quan", "Khai cuộc C1–C7", "Hồ sơ cá nhân", "Ván đấu", "Live observer", "Nhập dữ liệu"])
 st.sidebar.info("Dữ liệu hiển thị chỉ bao gồm phần đã nhập. Tần suất lịch sử không phải xác suất thắng hay gợi ý nước tốt nhất.")
 if st.sidebar.button("Đọc lại dữ liệu"):
     st.rerun()
@@ -37,8 +37,6 @@ if section == "Tổng quan":
     source = st.selectbox("Nguồn phân tích",["lichess","chesscom","import"], format_func=SOURCE_NAMES.get)
     data = get("/overview",{"source":source})
     if data:
-        if data.get("release_id"):
-            st.caption(f'Bản dữ liệu đã đối chiếu Spark/Trino: {data["release_id"]}')
         s = data["summary"]
         if not s["games"]:
             with st.container(border=True):
@@ -53,11 +51,11 @@ if section == "Tổng quan":
         st.caption(f'Phạm vi đã nhập: {s["first_game"]} → {s["last_game"]}')
         with st.expander("Phạm vi mẫu và cách cập nhật", expanded=False):
             if source == "lichess":
-                st.write("Mỗi lượt thu thập demo giới hạn 1.000 ván Rated Blitz đầu tiên khớp tháng. Bộ mẫu tháng 9 và tháng 10/2026 tạo thành 2.000 ván; đây không phải giới hạn lưu trữ của hệ thống.")
+                st.write("Mỗi lượt thu thập demo giới hạn 1.000 ván Rated Blitz đầu tiên khớp tháng. Bộ mẫu ban đầu tháng 9 và tháng 10/2026 gồm 2.000 ván; đồng bộ người chơi và ván trực tiếp có thể bổ sung dữ liệu; đây không phải giới hạn lưu trữ của hệ thống.")
                 st.write("Chạy lại cùng nguồn và giới hạn sẽ không cộng thêm ván trùng. Muốn mở rộng cần tăng giới hạn hoặc nhập thêm tháng, sau đó kiểm chứng và công bố bản mới.")
                 st.caption("Lịch Dagster hiện lấy tháng trước vào Chủ nhật, giới hạn 1.000 ván/lượt. Mẫu đầu tệp không đại diện toàn tháng.")
             elif source == "chesscom":
-                st.write("Bộ demo gồm lịch sử Hikaru tháng 9/2026. Số ván phản ánh dữ liệu đã nhập, không đại diện toàn nền tảng.")
+                st.write("Bộ demo ban đầu gồm lịch sử Hikaru tháng 9/2026; lịch sử đồng bộ thêm được gộp theo ID ván duy nhất. Số ván phản ánh dữ liệu đã nhập, không đại diện toàn nền tảng.")
             else:
                 st.write("Nguồn PGN nhập thủ công, được phân tích riêng với hai nền tảng.")
         st.info("Biểu đồ khai cuộc: chỉ Rated Blitz đã nhận diện. Mẫu số tỷ trọng gồm mọi nhóm đủ điều kiện, không chỉ Top N.")
@@ -90,6 +88,8 @@ elif section == "Khai cuộc C1–C7":
 elif section == "Hồ sơ cá nhân":
     source = st.selectbox("Nền tảng", ["chesscom", "lichess", "import"], format_func=SOURCE_NAMES.get)
     username = st.text_input("Username", "hikaru")
+    from sync_panel import player_sync
+    player_sync(API, source, username)
     if username:
         data = get(f"/players/{source}/{username}")
         if data:
@@ -105,7 +105,7 @@ elif section == "Ván đấu":
             board = chess.Board(moves[ply-1]["fen_after"]) if ply else chess.Board()
             a,b = st.columns([1,1])
             with a:
-                st.html(chess.svg.board(board,size=450))
+                st.image(chess.svg.board(board,size=450), width=450)
             with b:
                 st.write(f'{game["white"]} — {game["black"]}')
                 st.write("Nhãn tại mốc:",moves[ply-1]["opening_name"] if ply else "Chưa có")
@@ -119,34 +119,46 @@ elif section == "Ván đấu":
                     st.dataframe(result["moves"],width="stretch")
             with st.expander("Nguồn và phiên bản nhận diện"):
                 st.json(game)
-elif section == "Dự đoán thử nghiệm":
-    report = get("/model")
-    st.warning("Baseline trước ván chỉ dùng Elo. Chưa phải dự đoán theo vị trí, chưa hiệu chỉnh xác suất và không dùng để hỗ trợ khi thi đấu.")
-    if report and report.get("model_id"):
-        st.json(report)
-        a,b = st.columns(2)
-        white = a.number_input("Elo Trắng",report["rating_min"],report["rating_max"],int((report["rating_min"]+report["rating_max"])/2))
-        black = b.number_input("Elo Đen",report["rating_min"],report["rating_max"],int((report["rating_min"]+report["rating_max"])/2))
-        if st.button("Ước lượng thử"):
-            result = get("/prediction",{"source":report["source"],"speed":report["speed"],"white_elo":white,"black_elo":black})
-            if result:
-                st.json(result)
-    else:
-        st.info("Chưa huấn luyện. CLI: chess4f train --source chesscom --speed blitz")
+elif section == "Nhập dữ liệu":
+    from sync_panel import backfill
+    backfill(API)
 elif section == "Live observer":
     st.warning("Luồng công khai Lichess có độ trễ do nguồn. Dùng để quan sát; không phải công cụ hỗ trợ người đang thi đấu.")
-    game_id = st.text_input("Lichess game ID (8 ký tự)")
-    st.caption("Khởi động bộ nhận bằng: chess4f live GAME_ID. Trang này chỉ đọc trạng thái, không tự gửi nước đi.")
+    from sync_panel import post
+    username_live = st.text_input("Tìm ván đang chơi bằng username Lichess")
+    if st.button("Tìm ván đang diễn ra") and username_live:
+        found = get(f"/live-discovery/{username_live}")
+        if found and found.get("ongoing"):
+            st.session_state["live_game"] = found["game_id"]
+        elif found:
+            st.info("Tài khoản không có ván đang diễn ra; API có thể trả về ván gần nhất đã kết thúc.")
+    game_id = st.text_input("Lichess game ID (8 ký tự)", key="live_game")
+    a,b = st.columns(2)
+    if a.button("Kết nối ván", type="primary") and game_id:
+        result = post(API, f"/live-observers/{game_id}")
+        if result:
+            st.success("Đã yêu cầu kết nối luồng Lichess.")
+    if b.button("Dừng theo dõi") and game_id:
+        post(API, f"/live-observers/{game_id}", method="DELETE")
+    st.caption("Luồng có độ trễ 3 nước theo Lichess. Ván kết thúc được xếp hàng nhập và công bố; không gửi nước đi hay đánh giá engine.")
     if game_id:
         @st.fragment(run_every="3s")
         def live_panel():
             data = get(f"/live/{game_id}")
             if data:
-                st.write("Trạng thái:",data["status"])
+                labels = {"observing":"Đang nhận nước đi", "connecting":"Đang kết nối", "stream_closed":"Luồng đã kết thúc", "disconnected":"Mất kết nối — bấm Kết nối ván để tiếp tục", "stopped":"Đã dừng", "failed":"Kết nối thất bại", "reconnecting":"Đang kết nối lại"}
+                st.write("Trạng thái:", labels.get(data["status"], data["status"]))
+                players = data.get("players", {})
+                names = [players.get(c, {}).get("user", {}).get("name", c) for c in ("white", "black")]
+                st.subheader(" — ".join(names))
                 st.caption(f'Nhận gần nhất: {data.get("received_at", "chưa có")} · {data["source_delay"]}')
                 if data.get("fen"):
-                    st.html(chess.svg.board(chess.Board(data["fen"]),size=440))
-                st.write("Nhãn khớp gần nhất:",data.get("opening"))
+                    st.image(chess.svg.board(chess.Board(data["fen"]),size=440), width=440)
+                label = data.get("opening")
+                st.write("Nhãn khớp gần nhất:", f'{label["name"]} ({label["eco"]})' if label else "Chưa nhận diện")
+                st.caption(f'Số sự kiện đã nhận: {data.get("received_events", 0)}')
+                if data.get("ingestion_request_id"):
+                    st.info("Ván đã kết thúc và được xếp hàng nhập vào kho phân tích.")
                 with st.expander("Sự kiện / trạng thái"):
                     st.json(data)
         live_panel()
