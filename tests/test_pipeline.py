@@ -66,6 +66,15 @@ def test_calendar_boundaries():
     assert classify_speed("300") == "blitz"
 
 
+def test_month_input_accepts_unpadded_month():
+    assert month_plan("2026-7", "2026-08") == ["2026-07", "2026-08"]
+    assert month_plan(" 2026-7 ", "2026-07") == ["2026-07"]
+    with pytest.raises(ValueError, match="invalid month"):
+        month_plan("2026-13")
+    with pytest.raises(ValueError, match="YYYY-MM"):
+        month_plan("2026/07")
+
+
 def test_chesscom_link_is_stable_id(lake_root,pgn_file):
     raw=pgn().replace('[Site "https://lichess.org/AbCd1234"]','[Site "Chess.com"]\n[Link "https://www.chess.com/game/live/123456789"]')
     pgn_file.write_text(raw,encoding="utf-8")

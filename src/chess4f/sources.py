@@ -18,10 +18,24 @@ def previous_month(today=None):
     return f"{today.year-1}-12" if today.month == 1 else f"{today.year}-{today.month-1:02}"
 
 
+MONTH_PATTERN = re.compile(r"\s*(\d{4})-(\d{1,2})\s*")
+
+
+def normalize_month(value, field="month"):
+    """Accept YYYY-M / YYYY-MM and return YYYY-MM; reject anything else."""
+    match = MONTH_PATTERN.fullmatch(str(value))
+    if not match:
+        raise ValueError(f"{field} must use YYYY-MM, for example 2026-07")
+    year, month = int(match.group(1)), int(match.group(2))
+    if not 1 <= month <= 12:
+        raise ValueError(f"{field} has an invalid month: {value!r}")
+    return f"{year:04d}-{month:02d}"
+
+
 def month_plan(start, end=None):
     end = end or previous_month()
-    first = date.fromisoformat(start + "-01")
-    last = date.fromisoformat(end + "-01")
+    first = date.fromisoformat(normalize_month(start, "start") + "-01")
+    last = date.fromisoformat(normalize_month(end, "end") + "-01")
     if first > last:
         raise ValueError("Start month is after end month")
     months = []
@@ -34,6 +48,7 @@ def month_plan(start, end=None):
 def chesscom_archive(root, username, month, allow_empty=False):
     if not re.fullmatch(r"[A-Za-z0-9_-]{2,50}", username):
         raise ValueError("Invalid username")
+    month = normalize_month(month)
     date.fromisoformat(month + "-01")
     url = f"https://api.chess.com/pub/player/{username.lower()}/games/{month.replace('-', '/')}"
     folder = Path(root) / "landing/chesscom" / username.lower()
@@ -150,6 +165,7 @@ def lichess_player(root, username, month, limit=1000):
     from datetime import datetime, timezone
     if not re.fullmatch(r"[A-Za-z0-9_-]{2,50}", username):
         raise ValueError("Invalid username")
+    month = normalize_month(month)
     first = date.fromisoformat(month + "-01")
     end = date(first.year + (first.month == 12), first.month % 12 + 1, 1)
     since = int(datetime.combine(first, datetime.min.time(), timezone.utc).timestamp()*1000)

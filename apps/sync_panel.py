@@ -8,9 +8,14 @@ def post(api, path, payload=None, method="POST"):
         response = httpx.request(method, api+path, json=payload, timeout=40)
         response.raise_for_status()
         return response.json()
+    except httpx.HTTPStatusError as exc:
+        try:
+            detail = exc.response.json().get("detail", exc.response.text)
+        except ValueError:
+            detail = exc.response.text
+        st.error("Không thể gửi yêu cầu: " + str(detail)[:500])
     except httpx.HTTPError as exc:
-        detail = exc.response.text if isinstance(exc, httpx.HTTPStatusError) else str(exc)
-        st.error("Không thể gửi yêu cầu: " + detail[:500])
+        st.error("Không thể gửi yêu cầu: " + str(exc)[:500])
 
 
 def progress(api):
