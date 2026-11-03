@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from chess4f import requests_queue as queue
 
@@ -43,3 +45,23 @@ def test_empty_player_months_complete_without_publication(tmp_path, monkeypatch)
     assert result["status"] == "complete"
     assert len(result["months"]) == 2
     assert all(item["accepted"] == 0 for item in result["months"])
+
+
+def test_retry_keeps_completed_month_progress(tmp_path):
+    request = queue.enqueue(tmp_path, payload())
+    path = queue.request_path(tmp_path, request["id"])
+    item = json.loads(path.read_text(encoding="utf-8"))
+    item.update(status="failed", stage="failed",
+                months=[{"month": "2026-09", "status": "complete", "accepted": 0}])
+    path.write_text(json.dumps(item), encoding="utf-8")
+    retried = queue.retry_request(tmp_path, request["id"])
+    assert retried["status"] == "queued"
+    assert retried["retry_of"] == request["id"]
+    assert retried["months"] == item["months"]
+    assert queue.enqueue(tmp_path, payload())["id"] == retried["id"]
+
+
+def test_retry_rejects_a_request_that_did_not_fail(tmp_path):
+    request = queue.enqueue(tmp_path, payload())
+    with pytest.raises(ValueError, match="Only failed"):
+        queue.retry_request(tmp_path, request["id"])

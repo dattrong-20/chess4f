@@ -67,7 +67,7 @@ Update this document only from executed checks; never mark generated configurati
 ## 2026-11-03 committed user jobs, live ingestion and coverage ledger
 
 - Commits `e4ccb4f` (feature) and `e9dd525` (docs) publish the player-sync, monthly backfill, finished-game ingestion queue and live observer work that was previously uncommitted, then push to `main`.
-- Full unit suite after adding coverage-ledger tests: **36 passed** on Windows/Python 3.11. Integration checks below were **not** rerun in this checkpoint because the Docker services and Dagster were stopped; earlier results remain the last recorded integration evidence.
+- Full unit suite after adding coverage-ledger tests was **36 passed**; after the later queue-retry tests the suite is **38 passed** on Windows/Python 3.11. Integration checks below were **not** rerun in this checkpoint because the Docker services and Dagster were stopped; earlier results remain the last recorded integration evidence.
 - `chess4f coverage` against the published local dataset (`r_30c2d4133f144d7394f6825353940801`) reports:
   - Lichess, 2,011 games: 2026-09 has 1,000 games all on one day (cap 1,000); 2026-10 has 1,010 games (1,000 on 1 October + 10 on 31 October); 2026-11 has 1 game from a completed live observation.
   - Chess.com, 519 games: 2026-09 has 509 games over 21 days (4 on 30 September); 2026-10 has 10 games.
@@ -85,4 +85,5 @@ With the Docker stack already running and the host Dagster restarted through `sc
 - Dagster 1.13.28 webserver and daemon are running; `source_check_job_schedule` (`0 7 * * *`), `monthly_refresh_job_schedule` (`0 8 * * 0`) and `user_request_sensor` all report `RUNNING`.
 - `scripts/capture-demo.py` captured the real dashboard in headless Chromium: overview, player profile, live observer, backfill form and opening analysis. Four screenshots were committed to `docs/images/` and embedded in the README; video and extra captures remain in ignored `artifacts/demo`.
 - Not re-run in this pass: a new scheduled refresh or user request (queue execution was validated earlier), and any multi-day unattended run.
+- Final unit suite for this checkpoint: **38 passed**.
 

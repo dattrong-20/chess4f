@@ -148,6 +148,7 @@ pytest -q
 | `tests/` | Data integrity, platform IDs, temporal leakage and API tests; fixtures are synthetic |
 | `docs/` | Architecture decisions, roadmap, data contracts and validation notes |
 | `docs/COVERAGE.md` | Observed coverage ledger: per-month/day counts and boundary exposure |
+| `docs/ARCHITECTURE.md` | Component map, enforced invariants, failure semantics and scaling path |
 | `docs/CV.md` | Verified CV bullets plus the claims that must not be made |
 | `data/` (ignored) | Source objects, Delta tables, run manifests, reference data, live journals, models |
 
