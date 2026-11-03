@@ -14,6 +14,9 @@ from deltalake import DeltaTable
 from .openings import OpeningCatalog, position_key
 from .storage import Lake, atomic_json, digest, utc_now
 
+# Larger microbatches keep MERGE count low on partitioned Silver tables.
+FLUSH_EVERY = 2000
+
 
 def classify_speed(value):
     try:
@@ -171,12 +174,12 @@ def ingest_pgn(root, path, source="import", start=None, end=None, limit=None, so
     def flush():
         lake.upsert("bronze/games", bronze, "record_id")
         lake.upsert("silver/quarantine", bad, "record_id")
-        if clean and lake.exists("silver/moves"):
-            # Remove obsolete tail moves when an upstream game is corrected/re-imported.
+        if clean and lake.exists("silver/moves") and not lake.partition_columns("silver/moves"):
+            # Unpartitioned fallback: remove obsolete tail moves on correction.
             keys = ",".join("'" + r["game_key"].replace("'", "''") + "'" for r in clean)
             DeltaTable(str(lake.path("silver/moves"))).delete(f"game_key IN ({keys})")
         lake.upsert("silver/games", clean, "game_key", partition_by=["year_month"])
-        lake.upsert("silver/moves", moves, "move_key", partition_by=["year_month"])
+        lake.upsert("silver/moves", moves, "move_key", partition_by=["year_month"], scope_key="game_key")
         bronze.clear(); clean.clear(); moves.clear(); bad.clear()
     try:
         with lake.lock(), open(path, encoding="utf-8-sig") as stream:
@@ -202,7 +205,7 @@ def ingest_pgn(root, path, source="import", start=None, end=None, limit=None, so
                 except ValueError as exc:
                     bad.append(dict(record_id=record_id, run_id=run_id, source_uri=origin, reason=str(exc)))
                     report["quarantined"] += 1
-                if report["read"] % 200 == 0:
+                if report["read"] % FLUSH_EVERY == 0:
                     flush()
                     atomic_json(report_path, report)
                 if limit and report["accepted"] >= limit:

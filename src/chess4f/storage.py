@@ -47,19 +47,43 @@ class Lake:
     def lock(self):
         return FileLock(str(self.root / "pipeline.lock"), timeout=10)
 
-    def upsert(self, name, rows, key, partition_by=None):
+    def upsert(self, name, rows, key, partition_by=None, scope_key=None):
         if not rows:
             return
         # Last record wins within one microbatch, avoiding ambiguous MERGE matches.
         unique = {r[key]: r for r in rows}
-        table = pa.Table.from_pylist(list(unique.values()), schema=TABLES[name])
+        values = list(unique.values())
         path = str(self.path(name))
         if not self.exists(name):
+            table = pa.Table.from_pylist(values, schema=TABLES[name])
             write_deltalake(path, table, partition_by=partition_by or None)
-        else:
-            (DeltaTable(path).merge(table, f"t.{key} = s.{key}",
-                                   source_alias="s", target_alias="t")
-             .when_matched_update_all().when_not_matched_insert_all().execute())
+            return
+        if partition_by and self.partition_columns(name) == partition_by:
+            self._upsert_partitions(name, values, key, scope_key or key, partition_by)
+            return
+        table = pa.Table.from_pylist(values, schema=TABLES[name])
+        (DeltaTable(path).merge(table, f"t.{key} = s.{key}",
+                                source_alias="s", target_alias="t")
+         .when_matched_update_all().when_not_matched_insert_all().execute())
+
+    def _upsert_partitions(self, name, rows, key, scope_key, partition_by):
+        """Rewrite only the touched partitions; rows sharing scope_key are replaced."""
+        path = str(self.path(name))
+        groups = {}
+        for row in rows:
+            groups.setdefault(tuple(row[column] for column in partition_by), []).append(row)
+        for values, fresh in groups.items():
+            filters = [(column, "=", value) for column, value in zip(partition_by, values)]
+            existing = DeltaTable(path).to_pyarrow_table(filters=filters).to_pylist()
+            scope = {row[scope_key] for row in fresh}
+            kept = [row for row in existing if row[scope_key] not in scope]
+            combined = kept + [{column: row.get(column) for column in TABLES[name].names} for row in fresh]
+            table = pa.Table.from_pylist(combined, schema=TABLES[name])
+            predicate = " AND ".join(
+                f"{column} = '{str(value).replace(chr(39), chr(39) * 2)}'"
+                for column, value in zip(partition_by, values))
+            write_deltalake(path, table, mode="overwrite", predicate=predicate,
+                            partition_by=partition_by)
 
     def overwrite(self, name, table, partition_by=None, predicate=None):
         kwargs = dict(mode="overwrite", schema_mode="overwrite")
