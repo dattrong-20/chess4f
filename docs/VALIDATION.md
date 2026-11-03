@@ -75,3 +75,14 @@ Update this document only from executed checks; never mark generated configurati
 - Deprecated `fetch_record_batch` calls were replaced with DuckDB `to_arrow_reader`; no behavior change is claimed beyond the API migration.
 - Not revalidated in this checkpoint: Trino serving, Streamlit AppTest, release republication and browser screenshots.
 
+## 2026-11-03 integration re-verification and screenshots
+
+With the Docker stack already running and the host Dagster restarted through `scripts/start-dagster.ps1`:
+
+- API `/overview?source=lichess` returned 2,011 games and 97 opening families from Trino release `r_30c2d4133f144d7394f6825353940801`; Streamlit `/_stcore/health` returned `ok`.
+- `scripts/verify-serving.py` passed: `TRINO_ONLY_OVERVIEW_PROFILE_REPLAY_HABITS_AND_UI_PASSED`. This re-checks overview parity for all three sources, Hikaru profile/replay/habits and the absence of the prediction/traceability navigation.
+- `scripts/verify-openings.py` passed every C1–C7 view plus empty-filter handling; the Trino cube totals match 1,991 recognized Rated Blitz games.
+- Dagster 1.13.28 webserver and daemon are running; `source_check_job_schedule` (`0 7 * * *`), `monthly_refresh_job_schedule` (`0 8 * * 0`) and `user_request_sensor` all report `RUNNING`.
+- `scripts/capture-demo.py` captured the real dashboard in headless Chromium: overview, player profile, live observer, backfill form and opening analysis. Four screenshots were committed to `docs/images/` and embedded in the README; video and extra captures remain in ignored `artifacts/demo`.
+- Not re-run in this pass: a new scheduled refresh or user request (queue execution was validated earlier), and any multi-day unattended run.
+

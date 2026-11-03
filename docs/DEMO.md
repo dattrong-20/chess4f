@@ -42,4 +42,4 @@ MinIO hosts immutable published Delta releases; ingestion still stages local Del
 .\.venv\Scripts\python.exe scripts/capture-demo.py
 .\.venv\Scripts\python.exe scripts/capture-live-demo.py
 ```
-The first script uses retained live state (set CHESS4F_DEMO_GAME if needed). The second chooses a currently broadcast public Blitz game and records 30 seconds; source availability/move timing can make that assertion fail. Outputs are in artifacts/demo.
+The first script uses retained live state (set CHESS4F_DEMO_GAME if needed). The second chooses a currently broadcast public Blitz game and records 30 seconds; source availability/move timing can make that assertion fail. Outputs are in artifacts/demo. Four representative screenshots from a verified capture are committed under `docs/images/` and embedded in the README; regenerated media stays ignored.

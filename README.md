@@ -2,9 +2,23 @@
 
 **Traceable chess analytics, from PGN to a Delta lakehouse and player insights.**
 
+[![tests](https://github.com/dattrong-20/chess4f/actions/workflows/ci.yml/badge.svg)](https://github.com/dattrong-20/chess4f/actions/workflows/ci.yml)
+
 chess4f is a university/portfolio project that extends a chess-opening visualization study into a data application. It ingests public game data, recognizes openings by board position, serves player profiles and records reproducible pipeline runs.
 
 > **Status: local application plus validated lakehouse batch integration.** MinIO, Spark, Hive Metastore and Trino have processed and verified a real-data release. Spark runs as one local driver (`local[2]`); this is not a multi-node cluster. Dagster schedules and a complete manual orchestration run are validated; username sync on both platforms and a real Lichess stream through finished-game publication are validated; unattended multi-day operation remains a milestone. See [Dagster orchestration](docs/ORCHESTRATION.md). See [lakehouse setup](docs/LAKEHOUSE.md), [validation evidence](docs/VALIDATION.md) and [roadmap](docs/ROADMAP.md).
+
+## Screenshots
+
+Real local dashboard captured with Playwright against the published Trino release. These are live API-backed screens over the bounded demo sample, not mocked data.
+
+| Overview | Player profile |
+|---|---|
+| ![Overview](docs/images/overview.png) | ![Player profile](docs/images/player-profile.png) |
+| **Opening analysis (C1–C7)** | **Delayed live observer** |
+| ![Opening analysis](docs/images/opening-analysis.png) | ![Live observer](docs/images/live-observer.png) |
+
+The capture script is `scripts/capture-demo.py`; generated screenshots and video stay in ignored `artifacts/demo`. See [demo instructions](docs/DEMO.md).
 
 ## What works
 
