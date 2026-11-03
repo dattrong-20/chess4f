@@ -145,24 +145,27 @@ elif section == "Ván đấu":
         data = get(f"/games/{game_key}")
         if data:
             game, moves = data["game"], data["moves"]
-            ply = st.slider("Ply phát lại",0,len(moves),0) if moves else 0
+            max_ply = len(moves)
+            if st.session_state.get("replay_game") != game_key:
+                st.session_state["replay_game"] = game_key
+                st.session_state["replay_ply"] = 0
+            ply = int(st.session_state.get("replay_ply", 0))
             board = chess.Board(moves[ply-1]["fen_after"]) if ply else chess.Board()
             a,b = st.columns([1,1])
             with a:
                 st.image(chess.svg.board(board,size=450, colors=BOARD_COLORS), width=450)
+                prev_col, info_col, next_col = st.columns([1, 2, 1])
+                if prev_col.button("◀", disabled=ply <= 0, key="ply_prev"):
+                    st.session_state["replay_ply"] = max(0, ply - 1)
+                    st.rerun()
+                if next_col.button("▶", disabled=ply >= max_ply, key="ply_next"):
+                    st.session_state["replay_ply"] = min(max_ply, ply + 1)
+                    st.rerun()
+                info_col.markdown(
+                    f"<div style='text-align:center;padding-top:0.45rem'>Ply {ply} / {max_ply}</div>",
+                    unsafe_allow_html=True)
             with b:
                 st.write(f'{game["white"]} — {game["black"]}')
-                st.write("Nhãn tại mốc:",moves[ply-1]["opening_name"] if ply else "Chưa có")
-                st.caption("Giữ nhãn khớp sau cùng trong 36 ply đầu. Kết quả cuối ván không phải dự đoán.")
-                player = game["white"] if board.turn else game["black"]
-                result = get(f'/habits/{game["source"]}/{player}', {"fen":board.fen(),"before":game["played_at"],"exclude_game":game_key})
-                if result:
-                    st.write("Thói quen trước ván này:",player)
-                    if result["insufficient_history"]:
-                        st.warning("Dưới 20 quan sát hoặc chưa có lịch sử ở vị trí này.")
-                    st.dataframe(result["moves"],width="stretch")
-            with st.expander("Nguồn và phiên bản nhận diện"):
-                st.json(game)
 elif section == "Nhập dữ liệu":
     from sync_panel import backfill
     backfill(API)
