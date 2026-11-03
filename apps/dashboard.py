@@ -94,12 +94,18 @@ def replay_board(data, key):
     left, right = st.columns([1, 1])
     with left:
         st.image(chess.svg.board(board, size=450, colors=BOARD_COLORS), width=450)
-        prev_col, info_col, next_col = st.columns([1, 2, 1])
+        first_col, prev_col, info_col, next_col, last_col = st.columns([1, 1, 2, 1, 1])
+        if first_col.button("⏮", disabled=ply <= 0, key="ply_first"):
+            st.session_state["replay_ply"] = 0
+            st.rerun(scope="fragment")
         if prev_col.button("◀", disabled=ply <= 0, key="ply_prev"):
             st.session_state["replay_ply"] = max(0, ply - 1)
             st.rerun(scope="fragment")
         if next_col.button("▶", disabled=ply >= max_ply, key="ply_next"):
             st.session_state["replay_ply"] = min(max_ply, ply + 1)
+            st.rerun(scope="fragment")
+        if last_col.button("⏭", disabled=ply >= max_ply, key="ply_last"):
+            st.session_state["replay_ply"] = max_ply
             st.rerun(scope="fragment")
         info_col.markdown(
             f"<div style='text-align:center;padding-top:0.45rem'>Ply {ply} / {max_ply}</div>",
