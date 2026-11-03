@@ -82,6 +82,20 @@ def game(game_key: str):
     return result
 
 
+@app.get("/evals/{game_key}")
+def evals(game_key: str):
+    from .evals import database, series
+
+    con = database(data_root())
+    try:
+        rows = series(con, game_key)
+    finally:
+        con.close()
+    if not rows:
+        raise HTTPException(404, "No Lichess engine evaluations for this game")
+    return {"game_key": game_key, "source": "lichess_pgn_comment", "evals": rows}
+
+
 @app.get("/habits/{source}/{username}")
 def habits(source: str, username: str, fen: str, before: str, exclude_game: str | None = None):
     try:

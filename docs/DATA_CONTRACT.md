@@ -29,6 +29,7 @@
 - A failed run can leave newer Silver than Gold. Retry rebuilds Gold; run manifests expose failures. Coherent snapshot publication is a planned improvement.
 - Gold currently rebuilds from Silver; it is correct at demo scale but not an incremental distributed aggregation.
 - Silver and Gold tables are partitioned by `year_month`; Bronze and quarantine remain unpartitioned. DuckDB reads only active file URIs returned by the Delta transaction log and reconstructs partition columns from the file layout (hive partitioning), not an uncontrolled Parquet glob.
+- The replay evaluation cache `data/evals.sqlite` is a derived local artifact built from Lichess `[%eval]` comments; it is not a release table and has no Chess.com coverage.
 - Old Delta files remain for version recovery; no automatic vacuum is installed.
 
 ## Sample / coverage

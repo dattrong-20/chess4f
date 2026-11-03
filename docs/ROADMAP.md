@@ -50,7 +50,7 @@ This roadmap separates implemented code from validated deployment. It does not r
 - [ ] Kafka integration if it adds replay/consumer value; do not pretend JSONL is Kafka
 
 ## GitHub / CV
-- [x] Public repository and Linux CI workflow; latest local suite: 54 tests
+- [x] Public repository and Linux CI workflow; latest local suite: 56 tests
 - [x] Real screenshots committed (`docs/images/`) and Playwright capture scripts; video reproducible locally
 - [x] CV description describes only validated capabilities (docs/CV.md)
 - [x] Synthetic throughput benchmarks recorded (20k games 110s, 100k games 562s); not a production-scale test

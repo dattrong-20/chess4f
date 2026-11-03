@@ -81,9 +81,40 @@ def game_key_from_input(value):
     return f"lichess:{text}"
 
 
+def fetch_evals(key):
+    try:
+        response = httpx.get(API + f"/evals/{key}", timeout=20)
+        if response.status_code == 404:
+            return []
+        response.raise_for_status()
+        return response.json().get("evals", [])
+    except (httpx.HTTPError, ValueError):
+        return []
+
+
+def eval_bar_html(current, height=450):
+    if not current:
+        share, label = 0.5, "0.0"
+    elif current.get("mate"):
+        mate = int(current["mate"])
+        share = 0.98 if mate > 0 else 0.02
+        label = f"#{mate}"
+    else:
+        cp = max(-1000, min(1000, int(current.get("cp") or 0)))
+        share = 1 / (1 + 10 ** (-(cp / 100) / 4))
+        label = f"{cp / 100:+.1f}"
+    white = share * 100
+    return f"""<div style="display:flex;flex-direction:column;align-items:center;width:40px">
+<div style="display:flex;flex-direction:column;height:{height}px;width:20px;
+border-radius:8px;overflow:hidden;border:1px solid #3D3A37">
+<div style="height:{100-white:.1f}%;background:#1B1B19"></div>
+<div style="height:{white:.1f}%;background:#F2F2EE"></div></div>
+<div style="white-space:nowrap;font-size:12px;color:#E8E6E3;margin-top:4px">{label}</div></div>"""
+
+
 @st.fragment
-def replay_board(data, key):
-    """Board, arrows and move list; button clicks rerun only this fragment."""
+def replay_board(data, key, evals):
+    """Board, arrows, eval bar and move list; clicks rerun only this fragment."""
     game, moves = data["game"], data["moves"]
     max_ply = len(moves)
     if st.session_state.get("replay_key") != key:
@@ -91,7 +122,14 @@ def replay_board(data, key):
         st.session_state["replay_ply"] = 0
     ply = int(st.session_state.get("replay_ply", 0))
     board = chess.Board(moves[ply-1]["fen_after"]) if ply else chess.Board()
-    left, right = st.columns([1, 1])
+    by_ply = {item["ply"]: item for item in evals}
+    current = next((by_ply[p] for p in range(ply, 0, -1) if p in by_ply), None)
+    if evals:
+        bar_col, left, right = st.columns([0.13, 1, 1])
+        with bar_col:
+            st.markdown(eval_bar_html(current), unsafe_allow_html=True)
+    else:
+        left, right = st.columns([1, 1])
     with left:
         st.image(chess.svg.board(board, size=450, colors=BOARD_COLORS), width=450)
         first_col, prev_col, info_col, next_col, last_col = st.columns([1, 1, 2, 1, 1])
@@ -217,7 +255,10 @@ elif section == "Ván đấu":
                 cache[key] = fetched
         data = cache.get(key)
         if data:
-            replay_board(data, key)
+            eval_cache = st.session_state.setdefault("eval_cache", {})
+            if key not in eval_cache:
+                eval_cache[key] = fetch_evals(key)
+            replay_board(data, key, eval_cache.get(key, []))
         else:
             st.info("Không tìm thấy ván. Kiểm tra ID hoặc nhập dạng nền_tảng:ID.")
 elif section == "Nhập dữ liệu":

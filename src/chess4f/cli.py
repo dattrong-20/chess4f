@@ -51,6 +51,7 @@ def main():
     p.add_argument("--retention-hours", type=int, default=168)
     p.add_argument("--vacuum", action="store_true", help="Delete files older than retention (default is dry run)")
     sub.add_parser("partition-silver", help="One-time migration: repartition Silver tables by year_month")
+    sub.add_parser("evals", help="Rebuild the Lichess PGN evaluation cache (data/evals.sqlite)")
     args = parser.parse_args()
     root = data_root()
     if args.command == "catalog":
@@ -90,6 +91,9 @@ def main():
     elif args.command == "partition-silver":
         from .maintenance import partition_silver
         result = partition_silver(root)
+    elif args.command == "evals":
+        from .evals import backfill
+        result = backfill(root)
     else:
         result = overview(root)
     print(json.dumps(result, indent=2, ensure_ascii=False))
