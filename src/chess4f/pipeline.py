@@ -106,7 +106,7 @@ def rebuild_gold(lake):
                    sum(white_score)::DOUBLE white_score_sum
             FROM silver_games WHERE rated AND speed='blitz' AND opening_family IS NOT NULL
             GROUP BY ALL
-        """).fetch_record_batch(rows_per_batch=65536)
+        """).to_arrow_reader(65536)
         lake.overwrite("gold/openings", openings)
         players = con.execute("""
             SELECT source, white player, black opponent, game_key, played_at, year_month, speed,
@@ -118,7 +118,7 @@ def rebuild_gold(lake):
                    'black', opening_family,
                    CASE white_score WHEN 0 THEN 'win' WHEN 1 THEN 'loss' ELSE 'draw' END,
                    black_elo, white_elo, 1-white_score FROM silver_games
-        """).fetch_record_batch(rows_per_batch=65536)
+        """).to_arrow_reader(65536)
         lake.overwrite("gold/player_games", players)
 
 

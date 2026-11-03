@@ -69,7 +69,7 @@ def snapshot(root):
             with lake.connection() as con:
                 for name in TABLES:
                     count = con.execute(f"SELECT count(*) FROM {name.replace('/', '_')}").fetchone()[0]
-                    table = con.execute(f"SELECT * FROM {name.replace('/', '_')}").fetch_record_batch(rows_per_batch=65536)
+                    table = con.execute(f"SELECT * FROM {name.replace('/', '_')}").to_arrow_reader(65536)
                     write_deltalake(str(destination / name), table)
                     manifest["tables"][name] = {"rows": count, "snapshot_version": 0}
         manifest["status"] = "exported"

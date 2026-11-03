@@ -5,6 +5,7 @@ from pathlib import Path
 from .analytics import overview
 from .config import data_root
 from .live import observe
+from .storage import atomic_json
 from .openings import download_catalog
 from .pipeline import ingest_pgn
 from .sources import chesscom_archive, lichess_day, month_plan
@@ -42,6 +43,9 @@ def main():
     p.add_argument("--limit", type=int, default=1000)
     p.add_argument("--all", action="store_true")
     p.add_argument("--check-only", action="store_true", help="Read HTTP headers only; do not download or ingest games")
+    p = sub.add_parser("coverage", help="Observed per-month coverage ledger; not a completeness claim")
+    p.add_argument("--source", choices=["lichess", "chesscom", "import"])
+    p.add_argument("--write", action="store_true", help="Also save the ledger under data/metadata/coverage.json")
     args = parser.parse_args()
     root = data_root()
     if args.command == "catalog":
@@ -68,6 +72,13 @@ def main():
     elif args.command == "sync-months":
         from .orchestrator import sync_months
         result = sync_months(root,args.start,args.end,None if args.all else args.limit,args.force)
+    elif args.command == "coverage":
+        from .coverage import ledger
+        result = ledger(root, args.source)
+        if args.write:
+            path = Path(root) / "metadata/coverage.json"
+            atomic_json(path, result)
+            result["ledger_path"] = str(path)
     else:
         result = overview(root)
     print(json.dumps(result, indent=2, ensure_ascii=False))

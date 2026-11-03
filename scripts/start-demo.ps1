@@ -9,7 +9,7 @@ try {
     docker volume create chess4f-lake_metastore | Out-Null
     if ($LASTEXITCODE -ne 0) { throw 'Cannot initialize persistent metastore volume' }
     if (-not (Test-Path 'data/published/latest.json')) { throw 'No published release. Run scripts/run-lakehouse.ps1 first.' }
-    Invoke-DockerChecked @('compose','--env-file','.env.lakehouse','-f','compose.yaml','--profile','query','up','-d','--no-build','object-store','metastore','trino')
+    Invoke-DockerChecked @('compose','--env-file','.env.lakehouse','-f','compose.yaml','up','-d','--no-build','object-store','metastore','trino')
     Invoke-DockerChecked @('compose','--env-file','.env.lakehouse','up','-d','--no-build','api')
     $deadline = (Get-Date).AddMinutes(10)
     do {

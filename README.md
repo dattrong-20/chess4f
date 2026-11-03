@@ -14,6 +14,7 @@ chess4f is a university/portfolio project that extends a chess-opening visualiza
 - Public Chess.com monthly player archives and a bounded Lichess archive extractor.
 - Trino-only application analytics pinned to a validated published release; DuckDB remains internal for transformation, training and reference checks.
 - Dagster source checks and capped refresh schedules, with Spark validation before release publication.
+- Observed-coverage ledger (`chess4f coverage`) reporting imported games per source/month/day and UTC boundary exposure; it documents sample shape, not completeness.
 - Player results, openings, opponents, game replay and personal move frequencies with an explicit historical cutoff.
 - Background username-history synchronization and monthly backfill via a durable Dagster request queue, with progress and retry from the UI. The old model experiment is not exposed in the application.
 - Lichess public delayed stream receiver, raw event journal and observer UI. Not a Board API client, engine or player-assistance tool.
@@ -30,7 +31,7 @@ Demo sources (bounded samples; see validation notes for publication status):
 
 Validation added 10 October games for Lichess `german11`, 10 for Chess.com `hikaru`, and one completed observed Lichess game: **2,530 unique games** at this checkpoint.
 
-The Lichess demo is a **bounded integration sample**, not a random or representative monthly sample. The Chess.com sample is one player's history, not platform-wide data. Sources are selectable and not silently pooled. Data, models, credentials and virtual environments are excluded from Git.
+The Lichess demo is a **bounded integration sample**, not a random or representative monthly sample; the September cap selects 1,000 games all played on 1 September. The Chess.com sample is one player's history, not platform-wide data. Sources are selectable and not silently pooled. `chess4f coverage` records this shape per month and day. Data, models, credentials and virtual environments are excluded from Git.
 
 ## Architecture: current release
 
@@ -101,6 +102,9 @@ chess4f ingest path/to/games.pgn --source lichess --start 2026-09-01 --end 2026-
 # Calendar plan ends at the last complete calendar month; availability is checked on fetch.
 chess4f plan --start 2026-01
 
+# Observed coverage per source/month/day; not proof of complete months.
+chess4f coverage --source lichess
+
 # Bounded backfill integration run: never marks a limited source scan as complete.
 chess4f sync-months --start 2026-09 --end 2026-09 --limit 1000
 
@@ -129,6 +133,8 @@ pytest -q
 | `apps/dashboard.py` | Streamlit UI |
 | `tests/` | Data integrity, platform IDs, temporal leakage and API tests; fixtures are synthetic |
 | `docs/` | Architecture decisions, roadmap, data contracts and validation notes |
+| `docs/COVERAGE.md` | Observed coverage ledger: per-month/day counts and boundary exposure |
+| `docs/CV.md` | Verified CV bullets plus the claims that must not be made |
 | `data/` (ignored) | Source objects, Delta tables, run manifests, reference data, live journals, models |
 
 ## Sources

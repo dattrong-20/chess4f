@@ -25,7 +25,7 @@ This roadmap separates implemented code from validated deployment. It does not r
 - [x] Calendar month planner and bounded sequential backfill CLI
 - [x] Failed/limited/completed-source-scan registry
 - [x] HTTP ETag/revision detection and capped Dagster refresh policy (not a full-archive checksum)
-- [ ] Adjacent-source UTC boundary coverage and coverage ledger
+- [ ] Adjacent-source UTC boundary coverage; observed-coverage ledger added (`chess4f coverage`, docs/COVERAGE.md)
 - [x] Dagster schedules, bounded read/publication retries, run UI and capped Lichess refresh
 - [ ] Additional source quotas and unattended multi-day validation
 - [ ] Efficient no-op re-import and partition-scoped gold refresh
@@ -49,5 +49,5 @@ This roadmap separates implemented code from validated deployment. It does not r
 ## GitHub / CV
 - [x] Public repository and Linux CI workflow; latest local suite: 33 tests
 - [ ] Screenshots and reproducible demonstration recording
-- [ ] CV description describes only validated capabilities
+- [x] CV description describes only validated capabilities (docs/CV.md)
 - [ ] Benchmark actual throughput, latency, memory and recovery behavior

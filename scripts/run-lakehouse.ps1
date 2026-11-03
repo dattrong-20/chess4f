@@ -38,7 +38,7 @@ try {
     & $taskPython -m chess4f.lakehouse upload --release $release
     if ($LASTEXITCODE -ne 0) { throw 'Upload failed' }
     Invoke-CheckedDocker ($composeArgs + @('run', '--rm', '--no-deps', '-e', "CHESS4F_RELEASE=$release", 'spark'))
-    Invoke-CheckedDocker ($composeArgs + @('--profile', 'query', 'up', '-d', '--no-build', 'trino'))
+    Invoke-CheckedDocker ($composeArgs + @('up', '-d', '--no-build', 'trino'))
     Wait-Http 'http://127.0.0.1:18090/v1/info' 600
     $catalogDeadline = (Get-Date).AddMinutes(10)
     do {
