@@ -6,5 +6,6 @@ COPY pyproject.toml ./
 COPY src ./src
 RUN pip install --no-cache-dir --no-deps .
 COPY apps ./apps
+COPY .streamlit ./.streamlit
 ENV CHESS4F_DATA=/data PYTHONUNBUFFERED=1
 CMD ["uvicorn", "chess4f.api:app", "--host", "0.0.0.0", "--port", "8000"]

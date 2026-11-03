@@ -7,7 +7,6 @@ import httpx
 import pandas as pd
 import plotly.express as px
 import streamlit as st
-import streamlit.components.v1 as components
 
 st.set_page_config(page_title="chess4f · Chess intelligence", page_icon="♞", layout="wide")
 API = os.environ.get("CHESS4F_API", "http://127.0.0.1:8000")
@@ -23,51 +22,73 @@ def get(path, params=None):
         return None
 
 
-st.markdown("""<style>
-.stApp{background:#f6f7fb}h1,h2,h3{color:#17213a}
-[data-testid="stMetric"]{background:white;border:1px solid #dfe5f1;border-radius:12px;padding:18px}
-</style>""", unsafe_allow_html=True)
-st.title("♞ chess4f")
-st.caption("Chess analytics • Delta Lake • Player intelligence • Delayed live observation")
+SOURCE_NAMES = {"lichess": "Lichess", "chesscom": "Chess.com", "import": "PGN nhập thủ công"}
+st.title("chess4f")
+st.caption("Khám phá khai cuộc · Hiểu lịch sử thi đấu · Theo dõi dữ liệu")
+st.sidebar.title("chess4f")
+st.sidebar.caption("CHESS ANALYTICS WORKSPACE")
 section = st.sidebar.radio("Không gian phân tích", ["Tổng quan", "Khai cuộc C1–C7", "Hồ sơ cá nhân", "Ván đấu", "Dự đoán thử nghiệm", "Live observer", "Truy vết dữ liệu"])
 st.sidebar.info("Dữ liệu hiển thị chỉ bao gồm phần đã nhập. Tần suất lịch sử không phải xác suất thắng hay gợi ý nước tốt nhất.")
 if st.sidebar.button("Đọc lại dữ liệu"):
     st.rerun()
 
 if section == "Tổng quan":
-    source = st.selectbox("Nguồn phân tích",["lichess","chesscom","import"])
+    st.subheader("Tổng quan nguồn dữ liệu")
+    source = st.selectbox("Nguồn phân tích",["lichess","chesscom","import"], format_func=SOURCE_NAMES.get)
     data = get("/overview",{"source":source})
     if data:
         if data.get("release_id"):
             st.caption(f'Bản dữ liệu đã đối chiếu Spark/Trino: {data["release_id"]}')
         s = data["summary"]
+        if not s["games"]:
+            with st.container(border=True):
+                st.subheader("Chưa có dữ liệu từ nguồn này", icon=":material/folder_open:")
+                st.write("PGN nhập thủ công là nhóm riêng cho các tệp được nhập với nhãn import; không phải tổng dữ liệu Lichess và Chess.com." if source == "import" else "Nguồn này chưa có ván trong bản dữ liệu đã công bố.")
+                st.caption("Chọn Lichess hoặc Chess.com để xem dữ liệu hiện có. Việc đổi nguồn không xóa dữ liệu.")
+            st.stop()
         a,b,c = st.columns(3)
-        a.metric("Ván đã nhập", f'{s["games"]:,}')
-        b.metric("Nhận diện được", f'{s["recognized"]:,}')
-        c.metric("Nhóm khai cuộc", s["opening_families"])
+        a.metric("Ván đã nhập", f'{s["games"]:,}', border=True)
+        b.metric("Nhận diện được", f'{s["recognized"]:,}', border=True)
+        c.metric("Nhóm khai cuộc", s["opening_families"], border=True)
         st.caption(f'Phạm vi đã nhập: {s["first_game"]} → {s["last_game"]}')
-        st.warning("Lichess: mẫu giới hạn ở đầu các tệp tháng đã nhập, không đại diện toàn ngày/tháng. Demo Chess.com: lịch sử một tài khoản, không đại diện toàn nền tảng. Hai nguồn được phân tích riêng.")
+        with st.expander("Phạm vi mẫu và cách cập nhật", expanded=False):
+            if source == "lichess":
+                st.write("Mỗi lượt thu thập demo giới hạn 1.000 ván Rated Blitz đầu tiên khớp tháng. Bộ mẫu tháng 9 và tháng 10/2026 tạo thành 2.000 ván; đây không phải giới hạn lưu trữ của hệ thống.")
+                st.write("Chạy lại cùng nguồn và giới hạn sẽ không cộng thêm ván trùng. Muốn mở rộng cần tăng giới hạn hoặc nhập thêm tháng, sau đó kiểm chứng và công bố bản mới.")
+                st.caption("Lịch Dagster hiện lấy tháng trước vào Chủ nhật, giới hạn 1.000 ván/lượt. Mẫu đầu tệp không đại diện toàn tháng.")
+            elif source == "chesscom":
+                st.write("Bộ demo gồm lịch sử Hikaru tháng 9/2026. Số ván phản ánh dữ liệu đã nhập, không đại diện toàn nền tảng.")
+            else:
+                st.write("Nguồn PGN nhập thủ công, được phân tích riêng với hai nền tảng.")
         st.info("Biểu đồ khai cuộc: chỉ Rated Blitz đã nhận diện. Mẫu số tỷ trọng gồm mọi nhóm đủ điều kiện, không chỉ Top N.")
         df = pd.DataFrame(data["openings"])
         if not df.empty:
             n = st.slider("Top nhóm", 5, 30, 10)
             fig = px.bar(df.head(n).iloc[::-1], x="popularity_pct", y="opening_family", orientation="h",
                          color_discrete_sequence=["#3155d9"], labels={"popularity_pct":"Tỷ trọng (%)", "opening_family":""})
+            st.subheader("Khai cuộc phổ biến")
+            fig.update_traces(texttemplate="%{x:.2f}%", textposition="outside", cliponaxis=False)
+            fig.update_layout(height=max(380, n*28), margin=dict(t=20,r=65,b=20), yaxis_title=None)
             st.plotly_chart(fig, width="stretch")
             shown = df.head(n).melt(id_vars=["opening_family"], value_vars=["white_win_pct","draw_pct","black_win_pct"],var_name="Kết quả",value_name="Tỷ lệ (%)")
             shown["Kết quả"] = shown["Kết quả"].map({"white_win_pct":"Trắng thắng","draw_pct":"Hòa","black_win_pct":"Đen thắng"})
-            st.plotly_chart(px.bar(shown,x="Tỷ lệ (%)",y="opening_family",color="Kết quả",orientation="h",barmode="stack"),width="stretch")
-            st.dataframe(df, width="stretch")
+            st.subheader("Cơ cấu kết quả thi đấu")
+            outcome = px.bar(shown,x="Tỷ lệ (%)",y="opening_family",color="Kết quả",orientation="h",barmode="stack", color_discrete_map={"Trắng thắng":"#247ba0","Hòa":"#aab2bd","Đen thắng":"#ed9135"})
+            outcome.update_layout(height=max(380,n*28),yaxis_title=None,legend_title_text="",legend=dict(orientation="h",y=1.1),margin=dict(t=40,b=20))
+            outcome.update_xaxes(range=[0,100])
+            st.plotly_chart(outcome,width="stretch")
+            with st.expander("Xem bảng số liệu"):
+                st.dataframe(df, width="stretch", hide_index=True)
         else:
             st.warning("Chưa có Rated Blitz đủ điều kiện. Hồ sơ cá nhân vẫn hỗ trợ các thể thức khác.")
 elif section == "Khai cuộc C1–C7":
     from opening_analysis import render
-    source = st.selectbox("Nguồn phân tích", ["lichess", "chesscom", "import"])
+    source = st.selectbox("Nguồn phân tích", ["lichess", "chesscom", "import"], format_func=SOURCE_NAMES.get)
     payload = get("/openings/cube", {"source": source})
     if payload:
         render(payload)
 elif section == "Hồ sơ cá nhân":
-    source = st.selectbox("Nền tảng", ["chesscom", "lichess", "import"])
+    source = st.selectbox("Nền tảng", ["chesscom", "lichess", "import"], format_func=SOURCE_NAMES.get)
     username = st.text_input("Username", "hikaru")
     if username:
         data = get(f"/players/{source}/{username}")
@@ -93,7 +114,7 @@ elif section == "Ván đấu":
             board = chess.Board(moves[ply-1]["fen_after"]) if ply else chess.Board()
             a,b = st.columns([1,1])
             with a:
-                components.html(chess.svg.board(board,size=450),height=465)
+                st.html(chess.svg.board(board,size=450))
             with b:
                 st.write(f'{game["white"]} — {game["black"]}')
                 st.write("Nhãn tại mốc:",moves[ply-1]["opening_name"] if ply else "Chưa có")
@@ -133,7 +154,7 @@ elif section == "Live observer":
                 st.write("Trạng thái:",data["status"])
                 st.caption(f'Nhận gần nhất: {data.get("received_at", "chưa có")} · {data["source_delay"]}')
                 if data.get("fen"):
-                    components.html(chess.svg.board(chess.Board(data["fen"]),size=440),height=455)
+                    st.html(chess.svg.board(chess.Board(data["fen"]),size=440))
                 st.write("Nhãn khớp gần nhất:",data.get("opening"))
                 with st.expander("Sự kiện / trạng thái"):
                     st.json(data)
