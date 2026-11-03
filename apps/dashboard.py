@@ -15,11 +15,12 @@ st.set_page_config(page_title="chess4f · Chess intelligence", page_icon="♞", 
 st.markdown("""
 <style>
   .block-container {padding-top: 2.2rem; max-width: 1200px;}
-  [data-testid="stMetric"] {background: #ffffff; border: 1px solid #e5e5df; border-radius: 12px; padding: 14px 16px;}
-  [data-testid="stMetricValue"] {font-weight: 700;}
-  [data-testid="stSidebar"] {border-right: 1px solid #e5e5df;}
-  h1, h2, h3 {letter-spacing: -0.01em;}
-  .stButton > button[kind="primary"] {background: #81B64C; border-color: #81B64C;}
+  [data-testid="stMetric"] {background: #262421; border: 1px solid #3D3A37; border-radius: 12px; padding: 14px 16px;}
+  [data-testid="stMetricValue"] {font-weight: 700; color: #E8E6E3;}
+  [data-testid="stSidebar"] {border-right: 1px solid #3D3A37;}
+  [data-testid="stHeader"] {background: transparent;}
+  h1, h2, h3 {letter-spacing: -0.01em; color: #E8E6E3;}
+  .stButton > button[kind="primary"] {background: #81B64C; border-color: #81B64C; color: #1F1F1C;}
   /* Keep the sidebar collapse/expand control: only hide the deploy button. */
   [data-testid="stAppDeployButton"], [data-testid="stDecoration"] {display: none;}
   [data-testid="stSidebarCollapseButton"], [data-testid="stExpandSidebarButton"] {visibility: visible !important;}

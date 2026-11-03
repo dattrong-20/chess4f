@@ -25,7 +25,8 @@ def render(data):
             marker=dict(colors=[WDL_SHORT["Thắng"], WDL_SHORT["Hòa"], WDL_SHORT["Thua"]]),
             textinfo="percent", textfont=dict(size=14),
             hovertemplate="%{label}: %{value:,} ván (%{percent})<extra></extra>"))
-        donut.add_annotation(text=f"{thousands(s['games'])} ván", showarrow=False, font=dict(size=20, color="#0f172a"))
+        donut.add_annotation(text=f"{thousands(s['games'])} ván", showarrow=False,
+                             font=dict(size=20, color="#E8E6E3"))
         style(donut, height=300, legend=dict(orientation="h", y=-0.08, x=0))
         st.plotly_chart(donut, width="stretch")
     left, right = st.columns(2)
