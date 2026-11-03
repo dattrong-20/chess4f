@@ -28,7 +28,7 @@
 - Each Delta table write is transactional; a multi-table pipeline is not globally atomic.
 - A failed run can leave newer Silver than Gold. Retry rebuilds Gold; run manifests expose failures. Coherent snapshot publication is a planned improvement.
 - Gold currently rebuilds from Silver; it is correct at demo scale but not an incremental distributed aggregation.
-- Gold tables are partitioned by `year_month`; Silver remains unpartitioned. DuckDB reads only active file URIs returned by the Delta transaction log and reconstructs partition columns from the file layout (hive partitioning), not an uncontrolled Parquet glob.
+- Silver and Gold tables are partitioned by `year_month`; Bronze and quarantine remain unpartitioned. DuckDB reads only active file URIs returned by the Delta transaction log and reconstructs partition columns from the file layout (hive partitioning), not an uncontrolled Parquet glob.
 - Old Delta files remain for version recovery; no automatic vacuum is installed.
 
 ## Sample / coverage

@@ -28,7 +28,7 @@ The capture script is `scripts/capture-demo.py`; generated screenshots and video
 - Public Chess.com monthly player archives and a bounded Lichess archive extractor.
 - Trino-only application analytics pinned to a validated published release; DuckDB remains internal for transformation, training and reference checks.
 - Dagster source checks and capped refresh schedules, with Spark validation before release publication.
-- Gold tables partitioned by `year_month` with partition-scoped rebuilds; `chess4f compact` compacts Delta files and vacuums with a seven-day retention floor.
+- Silver and Gold tables are partitioned by `year_month`; Gold rebuilds only touched months and `chess4f compact` compacts Delta files and vacuums with a seven-day retention floor.
 - Observed-coverage ledger (`chess4f coverage`) reporting imported games per source/month/day and UTC boundary exposure; it documents sample shape, not completeness.
 - Player results, openings, opponents, game replay and personal move frequencies with an explicit historical cutoff.
 - Background username-history synchronization and monthly backfill via a durable Dagster request queue, with progress and retry from the UI; an empty profile can auto-queue a bounded history fetch. The old model experiment is not exposed in the application.
@@ -95,7 +95,7 @@ Start API and UI in two terminals:
 
 - Dashboard: http://localhost:8501
 - API docs: http://localhost:8000/docs
-- API includes local job-submission endpoints. Set `CHESS4F_API_TOKEN` to require a bearer token on write routes; `/metrics` and `/health/deep` expose operations signals. Keep the localhost binding.
+- API includes local job-submission endpoints. Set `CHESS4F_API_TOKEN` to require a bearer token on write routes and `CHESS4F_DASHBOARD_PASSWORD` to gate the dashboard; `/metrics` and `/health/deep` expose operations signals. Keep the localhost binding.
 
 ## Docker
 

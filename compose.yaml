@@ -24,6 +24,7 @@ services:
     ports: ["127.0.0.1:8501:8501"]
     environment:
       CHESS4F_API: http://api:8000
+      CHESS4F_DASHBOARD_PASSWORD: ${CHESS4F_DASHBOARD_PASSWORD:-}
     depends_on:
       api:
         condition: service_healthy

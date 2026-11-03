@@ -8,7 +8,7 @@
 - Published release after first live ingestion: r_79b2a4f399dc48cbad86b447d1c730cc. Re-import checks may produce a newer release without increasing unique counts.
 - 50 unit tests passed. Real Trino overview/profile/replay/habits parity and all seven C1–C7 views passed again on 2026-11-03; recognized Rated Blitz cube contains 1,991 games.
 - Dagster 1.13.28 webserver/daemon verified running with both schedules and the user-request sensor `RUNNING`.
-- Gold is partitioned by `year_month` with partition-scoped rebuilds; `chess4f compact` handles compaction and retention-bounded vacuum. Write routes accept an optional `CHESS4F_API_TOKEN`; `/metrics` and `/health/deep` provide monitoring.
+- Silver and Gold are partitioned by `year_month`; Gold rebuilds only touched months. `chess4f compact` handles compaction and retention-bounded vacuum. Write routes accept an optional `CHESS4F_API_TOKEN`, the dashboard an optional `CHESS4F_DASHBOARD_PASSWORD`; `/metrics` and `/health/deep` provide monitoring.
 - Real dashboard screenshots (overview, player profile, opening analysis, delayed live observer) are committed under `docs/images/` and captured with Playwright, not mocked.
 - Opening analytics expose an explicit speed dimension (blitz/rapid/bullet/classical/all) on overview and C1–C7; Gold aggregates all speeds instead of blitz only.
 - Player profiles distinguish games pulled from the account's own archive from games where it merely appears as an opponent.

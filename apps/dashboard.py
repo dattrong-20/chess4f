@@ -1,4 +1,5 @@
 """Streamlit front end: Trino-backed analytics and queued ingestion via API."""
+import hmac
 import os
 
 import chess
@@ -24,6 +25,21 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 API = os.environ.get("CHESS4F_API", "http://127.0.0.1:8000")
+DASHBOARD_PASSWORD = os.environ.get("CHESS4F_DASHBOARD_PASSWORD")
+
+if DASHBOARD_PASSWORD and not st.session_state.get("dashboard_authenticated"):
+    st.title("chess4f")
+    st.caption("Khu vực phân tích nội bộ")
+    with st.form("dashboard-login"):
+        password = st.text_input("Mật khẩu", type="password")
+        submitted = st.form_submit_button("Đăng nhập", type="primary")
+    if submitted:
+        if hmac.compare_digest(password, DASHBOARD_PASSWORD):
+            st.session_state["dashboard_authenticated"] = True
+            st.rerun()
+        else:
+            st.error("Sai mật khẩu")
+    st.stop()
 
 
 def get(path, params=None):

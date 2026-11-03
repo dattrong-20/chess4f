@@ -50,6 +50,7 @@ def main():
     p.add_argument("--table", action="append", choices=list(TABLES))
     p.add_argument("--retention-hours", type=int, default=168)
     p.add_argument("--vacuum", action="store_true", help="Delete files older than retention (default is dry run)")
+    sub.add_parser("partition-silver", help="One-time migration: repartition Silver tables by year_month")
     args = parser.parse_args()
     root = data_root()
     if args.command == "catalog":
@@ -86,6 +87,9 @@ def main():
     elif args.command == "compact":
         from .maintenance import compact
         result = compact(root, args.table, args.retention_hours, args.vacuum)
+    elif args.command == "partition-silver":
+        from .maintenance import partition_silver
+        result = partition_silver(root)
     else:
         result = overview(root)
     print(json.dumps(result, indent=2, ensure_ascii=False))

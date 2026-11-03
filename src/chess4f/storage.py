@@ -47,7 +47,7 @@ class Lake:
     def lock(self):
         return FileLock(str(self.root / "pipeline.lock"), timeout=10)
 
-    def upsert(self, name, rows, key):
+    def upsert(self, name, rows, key, partition_by=None):
         if not rows:
             return
         # Last record wins within one microbatch, avoiding ambiguous MERGE matches.
@@ -55,7 +55,7 @@ class Lake:
         table = pa.Table.from_pylist(list(unique.values()), schema=TABLES[name])
         path = str(self.path(name))
         if not self.exists(name):
-            write_deltalake(path, table)
+            write_deltalake(path, table, partition_by=partition_by or None)
         else:
             (DeltaTable(path).merge(table, f"t.{key} = s.{key}",
                                    source_alias="s", target_alias="t")
@@ -112,7 +112,7 @@ TABLES = {
         ["white_elo", "black_elo", "ply_count", "matched_ply", "elo_diff"],
         ["avg_elo", "white_score"], ["rated"]),
     "silver/moves": schema(
-        ["move_key", "game_key", "source", "player", "played_at", "position_key",
+        ["move_key", "game_key", "source", "player", "played_at", "year_month", "position_key",
          "uci", "san", "fen_after", "opening_name", "catalog_version"], ["ply"]),
     "silver/quarantine": schema(["record_id", "run_id", "source_uri", "reason"]),
     "gold/openings": schema(

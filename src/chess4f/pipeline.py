@@ -74,7 +74,8 @@ def transform(game, source, source_uri, run_id, record_id, catalog):
             if label:
                 opening, matched_ply = label, ply
         moves.append(dict(move_key=f"{game_key}:{ply}", game_key=game_key, source=source,
-                          player=player, played_at=played_at, position_key=before, uci=move.uci(),
+                          player=player, played_at=played_at, year_month=played_at[:7],
+                          position_key=before, uci=move.uci(),
                           san=san, fen_after=board.fen(), ply=ply,
                           opening_name=opening["name"] if opening else None, catalog_version=catalog.version))
     avg = (we + be) / 2 if we is not None and be is not None else None
@@ -174,8 +175,8 @@ def ingest_pgn(root, path, source="import", start=None, end=None, limit=None, so
             # Remove obsolete tail moves when an upstream game is corrected/re-imported.
             keys = ",".join("'" + r["game_key"].replace("'", "''") + "'" for r in clean)
             DeltaTable(str(lake.path("silver/moves"))).delete(f"game_key IN ({keys})")
-        lake.upsert("silver/games", clean, "game_key")
-        lake.upsert("silver/moves", moves, "move_key")
+        lake.upsert("silver/games", clean, "game_key", partition_by=["year_month"])
+        lake.upsert("silver/moves", moves, "move_key", partition_by=["year_month"])
         bronze.clear(); clean.clear(); moves.clear(); bad.clear()
     try:
         with lake.lock(), open(path, encoding="utf-8-sig") as stream:

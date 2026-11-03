@@ -40,9 +40,10 @@ Python 3.11 · Delta Lake (delta-rs) · DuckDB · PyArrow · MinIO S3 · Apache 
   binding, release pinning, parity-failure pointer preservation, and queue
   retry semantics.
 
-- Hardened the lakehouse: Gold partitioned by month with partition-scoped
-  rebuilds, Delta compaction and retention-bounded vacuum, optional bearer-token
-  write auth, Prometheus metrics and deep health checks.
+- Hardened the lakehouse: Silver and Gold partitioned by month, partition-scoped
+  Gold rebuilds, Delta compaction and retention-bounded vacuum, optional bearer
+  token for writes, optional dashboard password, Prometheus metrics and deep
+  health checks.
 
 ## Vietnamese bullets
 
