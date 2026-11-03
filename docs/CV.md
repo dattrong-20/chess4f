@@ -35,20 +35,21 @@ Python 3.11 · Delta Lake (delta-rs) · DuckDB · PyArrow · MinIO S3 · Apache 
 - Added an observed-coverage ledger that reports games per source/month/day and
   UTC boundary exposure, so sample shape is documented instead of implied by a
   total.
-- Wrote 53 pytest tests covering repeat-ingest idempotency, quarantine,
+- Wrote 54 pytest tests covering repeat-ingest idempotency, quarantine,
   correction of obsolete move tails, temporal leakage cutoffs, SQL literal
   binding, release pinning, parity-failure pointer preservation, and queue
   retry semantics.
 
 - Hardened the lakehouse: Silver and Gold partitioned by month, partition-scoped
-  Gold rebuilds, no-op re-import that avoids needless releases, Delta compaction
+  Gold rebuilds, no-op re-import plus incremental releases that reuse unchanged
+  partitions, Delta compaction
   and retention-bounded vacuum, optional bearer token for writes, optional
   dashboard password, Prometheus metrics and deep health checks.
 
 ## Vietnamese bullets
 
 - Xây dựng nền tảng phân tích cờ vua end-to-end: ingest PGN công khai vào Delta
-  Bronze/Silver/Gold (2.530 ván, 186.383 dòng nước đi), ID ván ổn định, upsert
+  Bronze/Silver/Gold (107.155 ván, 7.369.425 dòng nước đi), ID ván ổn định, upsert
   idempotent, quarantine và run manifest.
 - Thiết kế publish release bất biến: snapshot → MinIO S3 → Spark tính lại Gold →
   đối chiếu parity hai chiều → Trino xác thực → chuyển con trỏ serving; lỗi không
@@ -60,7 +61,7 @@ Python 3.11 · Delta Lake (delta-rs) · DuckDB · PyArrow · MinIO S3 · Apache 
   và retry theo tháng.
 - Thêm coverage ledger báo số ván theo nguồn/tháng/ngày và rủi ro biên UTC, buộc
   phạm vi mẫu phải minh bạch thay vì suy ra từ tổng số.
-- 53 test pytest cho idempotency, quarantine, sửa đuôi nước đi cũ, chặn rò rỉ
+- 54 test pytest cho idempotency, quarantine, sửa đuôi nước đi cũ, chặn rò rỉ
   tương lai, bind SQL, pin release, giữ nguyên pointer khi parity lỗi.
 
 ## Evidence
@@ -72,7 +73,7 @@ Python 3.11 · Delta Lake (delta-rs) · DuckDB · PyArrow · MinIO S3 · Apache 
 | Trino-only serving, 503 on failure | `src/chess4f/trino_serving.py`, `tests/test_serving.py` |
 | Dagster jobs/schedules/queue | `src/chess4f/definitions.py`, docs/ORCHESTRATION.md |
 | Coverage ledger | `src/chess4f/coverage.py`, docs/COVERAGE.md |
-| Test count | `pytest -q` → 53 passed |
+| Test count | `pytest -q` → 54 passed |
 | Real UI screenshots | `docs/images/*.png` captured with Playwright, embedded in README |
 
 ## Do not claim

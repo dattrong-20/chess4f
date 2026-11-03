@@ -131,7 +131,7 @@ With the Docker stack already running and the host Dagster restarted through `sc
 - Re-published release `r_c9809b10d3d14c8c98e4344ee9092a18` after the layout migration: 6,014 games, 1,115 opening aggregates and 12,028 player rows; Spark parity and Trino publication passed.
 - Synthetic benchmark: 20,000 games / 120,000 moves in **109.64 s** ingestion and **112.10 s** including snapshot (previous checkpoint: 10,000 games in 44.46 s).
 - API operations: optional `CHESS4F_API_TOKEN` on POST/DELETE, `/metrics` request counters plus the published-release gauge, and `/health/deep` checking the pointer and Trino.
-- Full suite: **53 passed**; `verify-serving.py` passed on the partitioned release.
+- Full suite: **54 passed**; `verify-serving.py` passed on the partitioned release.
 
 ## 2026-11-03 100k backfill and clean benchmark
 
@@ -159,7 +159,7 @@ With the Docker stack already running and the host Dagster restarted through `sc
 
 ## 2026-11-03 final review
 
-- Full unit suite: **53 passed**. scripts/verify-serving.py and scripts/verify-openings.py passed against release 
+- Full unit suite: **54 passed**. scripts/verify-serving.py and scripts/verify-openings.py passed against release 
 _5b43ca80eff54877bfbb5d62e6092757 (C1-C7, cube 74,934 recognized blitz games).
 - Services checked: API /health and /health/deep ok, Trino ready, Dagster daemon and webserver up, both schedules and the request sensor RUNNING; GitHub Actions badge passing.
 - Documentation audit: README links resolve, no TODO/FIXME markers, dataset numbers match the manifest.
@@ -170,4 +170,12 @@ _5b43ca80eff54877bfbb5d62e6092757 (C1-C7, cube 74,934 recognized blitz games).
 - Ingestion now compares each game's content hash with the stored `record_id` and `game_key`. Identical games are counted as `unchanged` and skip Bronze/Silver writes, so Delta versions do not move.
 - Direct re-import of an existing PGN finished in **3.43 s** with `accepted: 0`, `unchanged: 1` and identical `Lake.versions()`; previously it would have republished the full 412 MB snapshot (~10 min).
 - End-to-end queue check: a Chess.com re-sync for `dambi333` 2026-03 completed with `accepted: 0`, `unchanged: 10`; the published release stayed `r_5b43ca80eff54877bfbb5d62e6092757` (no snapshot, no upload, no Spark run).
-- Suite: **53 passed**.
+- Suite: **54 passed**.
+
+## 2026-11-03 incremental release
+
+- The snapshot now clones the previous release table (hardlinks locally), rewrites only months whose local partition signature changed, and appends only new Bronze/quarantine records. Upload uses server-side S3 copy for reused objects and skips already-stored `bronze_objects`.
+- First incremental publish of an unchanged dataset: snapshot **3.6 s**, upload **19.5 s** (52 objects copied, 0 uploaded), Spark parity **131.7 s**, Trino publication **67.6 s** — about **3.7 minutes** end to end versus roughly 10 minutes for the previous full snapshot.
+- Published `r_e3f3e2f2603b487d89a35c656adb5557` with base `r_5b43ca80eff54877bfbb5d62e6092757`; counts unchanged (107,155 games, 7,369,425 moves) and `verify-serving.py` passed.
+- Storage is still duplicated per release: S3 copy creates the objects again (~412 MB/release). Deduplicating or garbage-collecting old releases remains future work; local hardlinks mean no extra disk use locally.
+- Suite: **54 passed**.

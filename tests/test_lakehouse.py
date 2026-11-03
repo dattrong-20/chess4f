@@ -1,10 +1,11 @@
 import json
 
+import pyarrow as pa
 import pytest
-from deltalake import DeltaTable
+from deltalake import DeltaTable, write_deltalake
 
 from chess4f import lakehouse
-from chess4f.storage import Lake
+from chess4f.storage import TABLES, Lake
 
 
 def test_snapshot_is_frozen_and_secret_setup_is_idempotent(tmp_path):
@@ -82,3 +83,32 @@ def test_register_tables_reraises_when_table_stays_missing(monkeypatch):
     monkeypatch.setattr(lakehouse, "sql", fake_sql)
     with pytest.raises(RuntimeError, match="catalog unavailable"):
         lakehouse.register_tables("r_" + "a" * 32, {"gold_openings": "gold/openings"})
+
+
+def _openings(rows):
+    return pa.Table.from_pylist(rows, schema=TABLES["gold/openings"])
+
+
+def test_incremental_snapshot_reuses_unchanged_partitions(tmp_path):
+    root = tmp_path / "data"
+    lake = Lake(root)
+    lake.upsert("silver/games", [{"game_key": "import:a", "source": "import"}], "game_key")
+    september = {"source": "import", "year_month": "2026-09", "speed": "blitz",
+                 "rating_group": "1600–1999", "opening_family": "Sicilian Defense",
+                 "n_games": 1, "white_wins": 1, "draws": 0, "black_wins": 0, "white_score_sum": 1.0}
+    lake.overwrite("gold/openings", _openings([september]), partition_by=["year_month"])
+    first = lakehouse.snapshot(root)
+    (root / "published").mkdir()
+    (root / "published" / "latest.json").write_text(json.dumps(first))
+
+    october = dict(september, year_month="2026-10")
+    write_deltalake(str(lake.path("gold/openings")), _openings([october]), mode="overwrite",
+                    predicate="year_month = '2026-10'", partition_by=["year_month"])
+    second = lakehouse.snapshot(root)
+
+    first_sep = next((root / "releases" / first["release_id"] / "gold/openings").rglob("year_month=2026-09/*.parquet"))
+    second_sep = next((root / "releases" / second["release_id"] / "gold/openings").rglob("year_month=2026-09/*.parquet"))
+    assert first_sep.stat().st_ino == second_sep.stat().st_ino
+    assert second["base_release"] == first["release_id"]
+    assert second["tables"]["gold/openings"]["rows"] == 2
+    assert DeltaTable(str(root / "releases" / second["release_id"] / "gold/openings")).count() == 2

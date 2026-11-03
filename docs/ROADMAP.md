@@ -19,6 +19,8 @@ This roadmap separates implemented code from validated deployment. It does not r
 - [x] Trino + appropriate metastore/catalog, registered Delta tables, SQL comparison
 - [x] Controlled Docker profiles fitting 16 GB RAM (Compose `jobs`/`compute`, not simultaneous)
 - [x] Snapshot publication: readers consume a coherent run across multiple tables
+- [x] Incremental releases: unchanged partitions are hardlinked and server-side copied, only touched months are rewritten
+- [ ] Release storage deduplication / garbage collection for old releases
 - [x] Partition strategy / compaction / retention: Silver+Gold by `year_month`, `chess4f compact` with a 168h vacuum floor
 
 ## M3 — incremental collection and operations
@@ -48,7 +50,7 @@ This roadmap separates implemented code from validated deployment. It does not r
 - [ ] Kafka integration if it adds replay/consumer value; do not pretend JSONL is Kafka
 
 ## GitHub / CV
-- [x] Public repository and Linux CI workflow; latest local suite: 53 tests
+- [x] Public repository and Linux CI workflow; latest local suite: 54 tests
 - [x] Real screenshots committed (`docs/images/`) and Playwright capture scripts; video reproducible locally
 - [x] CV description describes only validated capabilities (docs/CV.md)
 - [x] Synthetic throughput benchmarks recorded (20k games 110s, 100k games 562s); not a production-scale test

@@ -4,20 +4,55 @@ One publisher at a time. A failed release never replaces the serving pointer.
 Full snapshot exports are bounded-demo infrastructure, not incremental backfill.
 """
 import argparse
+import hashlib
 import json
 import os
 import re
 import secrets
+import shutil
 import time
 import uuid
 from pathlib import Path
 from urllib.parse import urlsplit
 
 import httpx
-from deltalake import write_deltalake
+import pyarrow as pa
+from deltalake import DeltaTable, write_deltalake
 
 from .config import data_root
 from .storage import Lake, TABLES, atomic_json, utc_now
+
+APPEND_ONLY = ("bronze/games", "silver/quarantine")
+
+
+def _clone_tree(source, destination):
+    """Reuse previous release files locally (hardlinks, copy as fallback)."""
+    for path in source.rglob("*"):
+        if not path.is_file():
+            continue
+        target = destination / path.relative_to(source)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            os.link(path, target)
+        except OSError:
+            shutil.copy2(path, target)
+
+
+def _partition_signatures(table_path):
+    """Hash the active files of every year_month partition."""
+    try:
+        table = DeltaTable(str(table_path))
+    except Exception:
+        return None
+    groups = {}
+    for uri in table.file_uris():
+        match = re.search(r"year_month=([^/\\]+)[/\\]", str(uri))
+        if not match:
+            return None
+        path = Path(uri)
+        groups.setdefault(match.group(1), []).append(f"{path.name}:{path.stat().st_size}")
+    return {month: hashlib.sha1("\n".join(sorted(items)).encode()).hexdigest()
+            for month, items in groups.items()}
 
 
 def release_id(value):
@@ -62,7 +97,18 @@ def snapshot(root):
     rid = "r_" + uuid.uuid4().hex
     destination = Path(root) / "releases" / rid
     destination.mkdir(parents=True)
-    manifest = {"release_id": rid, "created_at": utc_now(), "status": "preparing", "tables": {}}
+    pointer = Path(root) / "published/latest.json"
+    previous = None
+    previous_manifest = {}
+    if pointer.exists():
+        try:
+            previous_manifest = json.loads(pointer.read_text(encoding="utf-8"))
+            previous = previous_manifest.get("release_id")
+        except ValueError:
+            previous_manifest = {}
+    previous_dir = Path(root) / "releases" / previous if previous else None
+    manifest = {"release_id": rid, "created_at": utc_now(), "status": "preparing",
+                "base_release": previous, "tables": {}, "partitions": {}}
     path = destination / "manifest.json"
     try:
         with lake.lock():
@@ -71,10 +117,52 @@ def snapshot(root):
                 raise ValueError("Import games before exporting a release")
             with lake.connection() as con:
                 for name in TABLES:
-                    count = con.execute(f"SELECT count(*) FROM {name.replace('/', '_')}").fetchone()[0]
-                    table = con.execute(f"SELECT * FROM {name.replace('/', '_')}").to_arrow_reader(65536)
+                    view = name.replace("/", "_")
+                    count = con.execute(f"SELECT count(*) FROM {view}").fetchone()[0]
                     partitions = lake.partition_columns(name)
-                    write_deltalake(str(destination / name), table, partition_by=partitions or None)
+                    previous_table = previous_dir / name if previous_dir else None
+                    exported = False
+                    if previous_table and previous_table.exists() and partitions:
+                        previous_partitions = DeltaTable(str(previous_table)).metadata().partition_columns
+                        local_sig = _partition_signatures(lake.path(name))
+                        previous_sig = previous_manifest.get("partitions", {}).get(name)
+                        reusable = (list(previous_partitions) == partitions
+                                    and isinstance(previous_sig, dict)
+                                    and local_sig is not None)
+                        if reusable:
+                            _clone_tree(previous_table, destination / name)
+                            for month in sorted(set(previous_sig) - set(local_sig)):
+                                DeltaTable(str(destination / name)).delete(
+                                    f"year_month = '{month}'")
+                            changed = [month for month in sorted(local_sig)
+                                       if previous_sig.get(month) != local_sig[month]]
+                            for month in changed:
+                                rows = con.execute(
+                                    f"SELECT * FROM {view} WHERE year_month=?", [month]
+                                ).to_arrow_reader(65536)
+                                write_deltalake(str(destination / name), rows, mode="overwrite",
+                                                predicate=f"year_month = '{month}'",
+                                                partition_by=partitions)
+                            manifest["partitions"][name] = local_sig
+                            exported = True
+                    elif previous_table and previous_table.exists() and name in APPEND_ONLY:
+                        prev_ids = DeltaTable(str(previous_table)).to_pyarrow_table(
+                            columns=["record_id"]).column("record_id").to_pylist()
+                        con.register("previous_ids", pa.table(
+                            {"record_id": pa.array(prev_ids, type=pa.string())}))
+                        condition = "record_id NOT IN (SELECT record_id FROM previous_ids)"
+                        new_count = con.execute(f"SELECT count(*) FROM {view} WHERE {condition}").fetchone()[0]
+                        _clone_tree(previous_table, destination / name)
+                        if new_count:
+                            rows = con.execute(f"SELECT * FROM {view} WHERE {condition}").to_arrow_reader(65536)
+                            write_deltalake(str(destination / name), rows, mode="append")
+                        con.unregister("previous_ids")
+                        exported = True
+                    if not exported:
+                        rows = con.execute(f"SELECT * FROM {view}").to_arrow_reader(65536)
+                        write_deltalake(str(destination / name), rows, partition_by=partitions or None)
+                        if partitions:
+                            manifest["partitions"][name] = _partition_signatures(lake.path(name))
                     manifest["tables"][name] = {"rows": count, "snapshot_version": 0}
         manifest["status"] = "exported"
     except Exception as exc:
@@ -103,12 +191,39 @@ def upload(root, project, rid):
     # Refuse to overwrite a partial or complete release. Recovery uses a new ID.
     if s3.list_objects_v2(Bucket="chess4f", Prefix=prefix, MaxKeys=1).get("KeyCount", 0):
         raise ValueError("S3 release prefix already exists; export a new release for retry")
-    files = sorted(p for p in folder.rglob("*") if p.is_file() and p.name != "manifest.json")
-    for path in files:
-        s3.upload_file(str(path), "chess4f", prefix + path.relative_to(folder).as_posix())
+    previous = manifest.get("base_release")
+    previous_prefix = f"releases/{previous}/" if previous else None
+    active = []
+    for name in TABLES:
+        table_dir = folder / name
+        if not table_dir.exists():
+            continue
+        for uri in DeltaTable(str(table_dir)).file_uris():
+            path = Path(uri)
+            active.append((path, f"{name}/{path.relative_to(table_dir).as_posix()}"))
+        for log in sorted((table_dir / "_delta_log").glob("*")):
+            if log.is_file():
+                active.append((log, f"{name}/_delta_log/{log.name}"))
+    copied = 0
+    uploaded = 0
+    for path, relative in sorted(active, key=lambda item: item[1]):
+        key = prefix + relative
+        source = (Path(root) / "releases" / previous / relative) if previous else None
+        if source is not None and source.exists():
+            s3.copy_object(Bucket="chess4f", Key=key,
+                           CopySource={"Bucket": "chess4f", "Key": previous_prefix + relative})
+            copied += 1
+        else:
+            s3.upload_file(str(path), "chess4f", key)
+            uploaded += 1
     for path in sorted(p for p in (Path(root) / "bronze_objects").iterdir() if p.suffix in (".pgn", ".jsonl")):
-        s3.upload_file(str(path), "chess4f", f"bronze_objects/{path.name}")
-    manifest.update(status="uploaded", object_count=len(files), uploaded_at=utc_now())
+        key = f"bronze_objects/{path.name}"
+        try:
+            s3.head_object(Bucket="chess4f", Key=key)
+        except ClientError:
+            s3.upload_file(str(path), "chess4f", key)
+    manifest.update(status="uploaded", object_count=len(active), copied_objects=copied,
+                    uploaded_objects=uploaded, uploaded_at=utc_now())
     s3.put_object(Bucket="chess4f", Key=prefix + "manifest.json", Body=json.dumps(manifest).encode())
     atomic_json(folder / "manifest.json", manifest)
     return manifest
