@@ -84,6 +84,12 @@ With the Docker stack already running and the host Dagster restarted through `sc
 - `scripts/verify-openings.py` passed every C1–C7 view plus empty-filter handling; the Trino cube totals match 1,991 recognized Rated Blitz games.
 - Dagster 1.13.28 webserver and daemon are running; `source_check_job_schedule` (`0 7 * * *`), `monthly_refresh_job_schedule` (`0 8 * * 0`) and `user_request_sensor` all report `RUNNING`.
 - `scripts/capture-demo.py` captured the real dashboard in headless Chromium: overview, player profile, live observer, backfill form and opening analysis. Four screenshots were committed to `docs/images/` and embedded in the README; video and extra captures remain in ignored `artifacts/demo`.
-- Not re-run in this pass: a new scheduled refresh or user request (queue execution was validated earlier), and any multi-day unattended run.
+- Not re-run in this pass: a scheduled refresh, and any multi-day unattended run.
 - Final unit suite for this checkpoint: **38 passed**.
+
+## 2026-11-03 browser queue no-op check
+
+- Submitted the default backfill scope (Lichess 2026-09 → 2026-10, limit 1,000) through the real Streamlit form with Playwright (`scripts/verify-job-ui.py`). The new request `d767a687976f44f1a38ee03ea1e5233a` was queued and started by the Dagster sensor.
+- Both months returned `unchanged_source_validator`, the request finished `complete/published`, and **no new release was published**: the pointer stayed at `r_30c2d4133f144d7394f6825353940801` and Spark/Trino publication was skipped. This exercises the revision-aware skip and the no-op publication guard end to end.
+- The earlier full publication path (download → Delta → MinIO → Spark parity → Trino → pointer) remains the evidence recorded above and in the user-jobs sections.
 
