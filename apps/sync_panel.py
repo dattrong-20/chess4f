@@ -58,7 +58,6 @@ def player_sync(api, source, username):
     if source == "import":
         return
     with st.expander("Tải / cập nhật lịch sử từ nền tảng"):
-        st.caption("Chọn khoảng tháng; Dagster tải, xử lý và công bố trong nền. Giới hạn áp dụng cho từng tháng; lịch sử ngoài phạm vi không bị xóa.")
         today = date.today()
         month = f"{today.year-1}-12" if today.month == 1 else f"{today.year}-{today.month-1:02}"
         with st.form("sync-player"):

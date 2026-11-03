@@ -36,7 +36,6 @@ def render(payload):
     n = st.slider("Số nhóm phổ biến hiển thị", 5, 20, 10)
     top = totals.head(n).opening_family.tolist()
     st.metric("Ván đủ điều kiện sau lọc", f'{int(totals.n_games.sum()):,}', border=True)
-    st.caption("Mẫu số tỷ trọng gồm mọi nhóm khai cuộc sau bộ lọc, kể cả nhóm ngoài Top N. Dữ liệu mẫu đầu tệp không đại diện toàn tháng.")
     view = st.selectbox("Câu hỏi phân tích", ["C1 · Phổ biến", "C2 · Xu hướng sử dụng", "C3 · Thắng, hòa, thua", "C4 · Kết quả theo Elo", "C5 · Phổ biến và kết quả", "C6 · So sánh biến thể", "C7 · Kết quả theo tháng"])
     fig = None
     table = totals

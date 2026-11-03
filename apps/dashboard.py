@@ -130,7 +130,6 @@ elif section == "Nhập dữ liệu":
     from sync_panel import backfill
     backfill(API)
 elif section == "Live observer":
-    st.warning("Luồng công khai Lichess có độ trễ do nguồn. Dùng để quan sát; không phải công cụ hỗ trợ người đang thi đấu.")
     from sync_panel import post
     username_live = st.text_input("Tìm ván đang chơi bằng username Lichess")
     if st.button("Tìm ván đang diễn ra") and username_live:
@@ -147,7 +146,6 @@ elif section == "Live observer":
             st.success("Đã yêu cầu kết nối luồng Lichess.")
     if b.button("Dừng theo dõi") and game_id:
         post(API, f"/live-observers/{game_id}", method="DELETE")
-    st.caption("Luồng có độ trễ 3 nước theo Lichess. Ván kết thúc được xếp hàng nhập và công bố; không gửi nước đi hay đánh giá engine.")
     if game_id:
         @st.fragment(run_every="3s")
         def live_panel():

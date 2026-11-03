@@ -15,7 +15,6 @@ def render(data):
         return
     for col, key, label in zip(st.columns(4), ["games", "wins", "draws", "losses"], ["Số ván", "Thắng", "Hòa", "Thua"]):
         col.metric(label, thousands(int(s.get(key) or 0)), border=True)
-    st.caption(f'Chỉ lịch sử đã nhập · {s["first_game"][:10]} → {s["last_game"][:10]} · Không khẳng định đầy đủ tài khoản')
     wins, draws, losses = int(s.get("wins") or 0), int(s.get("draws") or 0), int(s.get("losses") or 0)
     with st.container(border=True):
         st.subheader("Kết quả thực chiến")
@@ -65,7 +64,6 @@ def render(data):
             st.plotly_chart(fig, width="stretch")
         else:
             st.info("Chưa có Elo hợp lệ trong lựa chọn này.")
-        st.caption(f'Biểu đồ và bảng lịch sử dùng {len(history)} ván gần nhất đã nhập (API giới hạn 200); các chỉ số và biểu đồ phía trên dùng toàn bộ {s["games"]} ván.')
         with st.expander("Lịch sử ván — lấy game_key để phát lại"):
             st.dataframe(history, hide_index=True, width="stretch")
             st.download_button("Tải lịch sử đang hiển thị", history.to_csv(index=False).encode("utf-8-sig"), file_name="player_history.csv", mime="text/csv")
