@@ -28,29 +28,24 @@ def progress(api):
             response = httpx.get(api+f"/requests/{request_id}", timeout=20)
             response.raise_for_status()
             item = response.json()
-            state = item["status"]
-            if state == "complete":
-                st.success("Đã công bố dữ liệu. Bấm Làm mới hồ sơ để xem kết quả.")
-                if st.button("Làm mới hồ sơ"):
-                    del st.session_state["sync_request"]
-                    st.rerun()
-            elif state == "failed":
-                st.error("Đồng bộ thất bại: " + item.get("error", ""))
-                if st.button("Thử lại từ tháng chưa hoàn tất"):
-                    retried = post(api, f"/requests/{request_id}/retry")
-                    if retried:
-                        st.session_state["sync_request"] = retried["id"]
-                        st.rerun()
-            else:
-                labels = {"waiting_for_dagster":"Chờ Dagster nhận yêu cầu", "snapshot_upload":"Đưa bản dữ liệu lên MinIO", "spark_validation":"Spark xử lý và kiểm chứng", "trino_validation":"Trino kiểm chứng trước công bố"}
-                st.info(labels.get(item["stage"], item["stage"]))
-                st.caption("Nếu chờ lâu ở hàng đợi, hãy kiểm tra Dagster daemon/sensor đang chạy trên máy.")
-            if item.get("months"):
-                st.dataframe(item["months"], hide_index=True)
-                if any(m.get("possibly_limited") for m in item["months"]):
-                    st.caption("Có tháng chạm giới hạn ván. Đây là lịch sử giới hạn, chưa khẳng định đã tải toàn bộ; tăng phạm vi ở lượt sau nếu cần.")
         except httpx.HTTPError:
-            st.warning("Chưa đọc được tiến độ. Yêu cầu đã gửi vẫn được lưu trên máy.")
+            st.info("Đang tải…")
+            return
+        state = item["status"]
+        if state == "complete":
+            # Show the refreshed profile immediately instead of a button.
+            st.session_state.pop("sync_request", None)
+            st.session_state.pop("auto_syncing", None)
+            st.rerun(scope="app")
+        elif state == "failed":
+            st.error("Đồng bộ thất bại: " + item.get("error", ""))
+            if st.button("Thử lại"):
+                retried = post(api, f"/requests/{request_id}/retry")
+                if retried:
+                    st.session_state["sync_request"] = retried["id"]
+                    st.rerun()
+        else:
+            st.info("Đang tải…")
     panel()
 
 
