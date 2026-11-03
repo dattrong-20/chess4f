@@ -131,4 +131,11 @@ With the Docker stack already running and the host Dagster restarted through `sc
 - Re-published release `r_c9809b10d3d14c8c98e4344ee9092a18` after the layout migration: 6,014 games, 1,115 opening aggregates and 12,028 player rows; Spark parity and Trino publication passed.
 - Synthetic benchmark: 20,000 games / 120,000 moves in **109.64 s** ingestion and **112.10 s** including snapshot (previous checkpoint: 10,000 games in 44.46 s).
 - API operations: optional `CHESS4F_API_TOKEN` on POST/DELETE, `/metrics` request counters plus the published-release gauge, and `/health/deep` checking the pointer and Trino.
-- Full suite: **50 passed**; `verify-serving.py` passed on the partitioned release.
+- Full suite: **52 passed**; `verify-serving.py` passed on the partitioned release.
+
+## 2026-11-03 100k backfill and clean benchmark
+
+- A user backfill (Lichess 2026-01 to 2026-10, 10,000 games/month) initially stalled because per-batch MERGE rewrote the whole partitioned Silver table. After the partition-scoped upsert fix it resumed and published release `r_54ad767c60d245dbaced09dccf21d3ff`: **103,498 games**, **7,047,128 move rows**, 6,863 opening aggregate rows and 206,996 player-perspective rows, with Spark parity and Trino publication.
+- Synthetic benchmark on an idle machine: **100,000 games / 600,000 moves in 562.26 s** ingestion and **565.13 s** including snapshot. The earlier 1,252 s run was contaminated by a concurrent backfill and is not the reference figure.
+- `scripts/verify-serving.py` passed on the 103k release; C1-C7 passed and the UI still renders.
+- Coverage caveat now stronger: every Lichess month is the first 10,000 matching games, all on that month's first day, so the dataset is ten single-day slices, not ten months of chess.

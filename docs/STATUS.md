@@ -2,11 +2,11 @@
 
 ## Verified current functionality
 - Unified Compose: MinIO, Hive Metastore, Trino, FastAPI and Streamlit; Spark runs as an on-demand local job. Dagster runs on the host.
-- 6,014 unique real games: 2,527 Lichess and 3,487 Chess.com. Lichess now includes Rated Rapid; the sample stays bounded per account/month, not a platform-wide population.
+- 103,498 unique real games: 100,011 Lichess and 3,487 Chess.com, 7,047,128 move rows. Lichess covers 10 monthly first-match caps (all on each month's first day) plus Rated Rapid; it is not a platform-wide population.
 - Username history sync from both Chess.com and Lichess passed download → Delta → MinIO → Spark comparison → Trino publication. Explicit sync button uses a selected month range and cap, not an unrestricted account crawl.
 - Public Lichess game eRIlxQlE was observed through resignation, then automatically queued and published as a finished game. Live updates are source-delayed; Chess.com live is not implemented.
 - Published release after first live ingestion: r_79b2a4f399dc48cbad86b447d1c730cc. Re-import checks may produce a newer release without increasing unique counts.
-- 50 unit tests passed. Real Trino overview/profile/replay/habits parity and all seven C1–C7 views passed again on 2026-11-03; recognized Rated Blitz cube contains 1,991 games.
+- 52 unit tests passed. Real Trino overview/profile/replay/habits parity and all seven C1–C7 views passed again on 2026-11-03; recognized Rated Blitz cube contains 1,991 games.
 - Dagster 1.13.28 webserver/daemon verified running with both schedules and the user-request sensor `RUNNING`.
 - Silver and Gold are partitioned by `year_month`; Gold rebuilds only touched months. `chess4f compact` handles compaction and retention-bounded vacuum. Write routes accept an optional `CHESS4F_API_TOKEN`, the dashboard an optional `CHESS4F_DASHBOARD_PASSWORD`; `/metrics` and `/health/deep` provide monitoring.
 - Real dashboard screenshots (overview, player profile, opening analysis, delayed live observer) are committed under `docs/images/` and captured with Playwright, not mocked.

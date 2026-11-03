@@ -18,7 +18,7 @@ Python 3.11 · Delta Lake (delta-rs) · DuckDB · PyArrow · MinIO S3 · Apache 
 ## English bullets
 
 - Built an end-to-end chess data platform ingesting public Lichess and Chess.com
-  games into Bronze/Silver/Gold Delta tables: 6,014 games and 473,595 move rows,
+  games into Bronze/Silver/Gold Delta tables: 103,498 games and 7,047,128 move rows,
   with content-addressed source objects (SHA-256), stable platform game IDs,
   idempotent upserts, quarantine and run manifests.
 - Implemented immutable release publication: snapshot under a writer lock,
@@ -35,7 +35,7 @@ Python 3.11 · Delta Lake (delta-rs) · DuckDB · PyArrow · MinIO S3 · Apache 
 - Added an observed-coverage ledger that reports games per source/month/day and
   UTC boundary exposure, so sample shape is documented instead of implied by a
   total.
-- Wrote 50 pytest tests covering repeat-ingest idempotency, quarantine,
+- Wrote 52 pytest tests covering repeat-ingest idempotency, quarantine,
   correction of obsolete move tails, temporal leakage cutoffs, SQL literal
   binding, release pinning, parity-failure pointer preservation, and queue
   retry semantics.
@@ -60,19 +60,19 @@ Python 3.11 · Delta Lake (delta-rs) · DuckDB · PyArrow · MinIO S3 · Apache 
   và retry theo tháng.
 - Thêm coverage ledger báo số ván theo nguồn/tháng/ngày và rủi ro biên UTC, buộc
   phạm vi mẫu phải minh bạch thay vì suy ra từ tổng số.
-- 50 test pytest cho idempotency, quarantine, sửa đuôi nước đi cũ, chặn rò rỉ
+- 52 test pytest cho idempotency, quarantine, sửa đuôi nước đi cũ, chặn rò rỉ
   tương lai, bind SQL, pin release, giữ nguyên pointer khi parity lỗi.
 
 ## Evidence
 
 | Claim | Evidence |
 |---|---|
-| 6,014 games / 473,595 moves | published release manifest `data/published/latest.json` |
+| 103,498 games / 7,047,128 moves | published release manifest `data/published/latest.json` |
 | Spark + Trino parity before publish | `lakehouse.validate_publish`, `jobs/build_gold.py`, docs/LAKEHOUSE.md |
 | Trino-only serving, 503 on failure | `src/chess4f/trino_serving.py`, `tests/test_serving.py` |
 | Dagster jobs/schedules/queue | `src/chess4f/definitions.py`, docs/ORCHESTRATION.md |
 | Coverage ledger | `src/chess4f/coverage.py`, docs/COVERAGE.md |
-| Test count | `pytest -q` → 50 passed |
+| Test count | `pytest -q` → 52 passed |
 | Real UI screenshots | `docs/images/*.png` captured with Playwright, embedded in README |
 
 ## Do not claim

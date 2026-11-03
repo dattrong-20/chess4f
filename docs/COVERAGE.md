@@ -2,7 +2,7 @@
 
 `chess4f coverage [--source lichess|chesscom|import] [--write]` reads the local
 Silver table and prints what was actually imported per source, month and day.
-It exists because a single total ("6,014 games") hides *where inside a month*
+It exists because a single total ("103,498 games") hides *where inside a month*
 those games came from.
 
 This is an operational artifact, not a published Delta table and not a
@@ -55,10 +55,18 @@ checkpoint exists.
 
 | Source | Games | Month | Games | Days | First day | Last day | Scan |
 |---|---:|---|---:|---:|---:|---:|---|
-| lichess | 2,527 | 2026-09 | 1,267 | 1 | 1,267 | 0 | limited cap 1,000 |
-| lichess | 2,527 | 2026-10 | 1,259 | 2 | 1,249 | 10 | none |
-| lichess | 2,527 | 2026-11 | 1 | 1 | 0 | 0 | none (single live game) |
-| chesscom | 3,487 | 2026-03 | 295 | 17 | 6 | 0 | none (player archive) |
+| lichess | 100,011 | 2026-01 | 10,000 | 1 | 10,000 | 0 | none |
+| lichess | 100,011 | 2026-02 | 10,000 | 1 | 10,000 | 0 | none |
+| lichess | 100,011 | 2026-03 | 10,000 | 1 | 10,000 | 0 | none |
+| lichess | 100,011 | 2026-04 | 10,000 | 1 | 10,000 | 0 | none |
+| lichess | 100,011 | 2026-05 | 10,000 | 1 | 10,000 | 0 | none |
+| lichess | 100,011 | 2026-06 | 10,000 | 1 | 10,000 | 0 | none |
+| lichess | 100,011 | 2026-07 | 10,000 | 1 | 10,000 | 0 | none |
+| lichess | 100,011 | 2026-08 | 10,000 | 1 | 10,000 | 0 | none |
+| lichess | 100,011 | 2026-09 | 10,000 | 1 | 10,000 | 0 | none |
+| lichess | 100,011 | 2026-10 | 10,010 | 2 | 10,000 | 10 | none |
+| lichess | 100,011 | 2026-11 | 1 | 1 | 0 | 0 | none |
+| chesscom | 3,487 | 2026-03 | 295 | 17 | 6 | 0 | none |
 | chesscom | 3,487 | 2026-04 | 177 | 15 | 0 | 0 | none |
 | chesscom | 3,487 | 2026-05 | 488 | 17 | 0 | 0 | none |
 | chesscom | 3,487 | 2026-06 | 709 | 24 | 0 | 29 | none |
@@ -70,8 +78,8 @@ checkpoint exists.
 Conclusions the project must keep stating:
 
 1. The Lichess September sample is **single-day**, not a monthly sample.
-2. The Lichess September and October samples are first-matching Blitz/Rapid
-   caps; 1,249 October games are on 1 October plus 10 later player-sync games.
+2. Every Lichess monthly sample is a first-match cap concentrated on that
+   month's first day; October adds 10 later player-sync games.
 3. Chess.com now spans March-October 2026 because several accounts were synced;
    this is broader per-account history, still not a platform-wide sample.
 4. Month-over-month opening comparisons remain illustrative, not population
