@@ -70,6 +70,13 @@ def chesscom_archive(root, username, month, allow_empty=False):
                     game.headers["Link"] = item["url"]
                 games.append(str(game))
     if not games and allow_empty:
+        # An empty month is normal for an inactive account, but a misspelled
+        # username must not be reported as "no games" and silently skipped.
+        with httpx.Client(timeout=30, headers={"User-Agent": user_agent()}) as client:
+            profile = client.get(f"https://api.chess.com/pub/player/{username.lower()}")
+        if profile.status_code == 404:
+            raise ValueError("Chess.com username not found; check the spelling")
+        profile.raise_for_status()
         return None, url
     if not games:
         raise ValueError("Source returned no PGNs for this player and month; no fabricated fallback")

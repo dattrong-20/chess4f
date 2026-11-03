@@ -106,5 +106,11 @@ With the Docker stack already running and the host Dagster restarted through `sc
 - One request (`dambi333`) failed during publication with a Hive Metastore duplicate table registration (`UNIQUETABLE`). That was a real idempotency gap, not a missing account: `register_tables` now re-checks table visibility after a failed `CALL register_table` and only accepts the duplicate when the table exists. Two regression tests cover the tolerated and re-raised paths.
 - New published release `r_85d7b319936244558d95a1776b9a1405`: **5,498 games** (2,011 Lichess / 3,487 Chess.com), 440,517 move rows, 696 opening aggregate rows, 10,996 player-perspective rows, 1,000 historical quarantine rows.
 - `scripts/verify-serving.py` passed again, and `scripts/verify-openings.py` rendered all C1-C7 views; the Lichess Rated Blitz cube still totals 1,991 games.
-- Full unit suite: **42 passed** (includes the two registration-resilience tests).
+- Full unit suite: **44 passed** (includes the two registration-resilience tests).
 - Dashboard visual pass: shared `apps/theme.py` palette and layout helper, a WDL donut with a centered game total, consistent hover/legend/grid styling across overview, player profile and C1-C7, and two explanatory captions removed from the overview on request. Screenshots recaptured.
+
+## 2026-11-03 profile search provenance check
+
+- Searching quangbufi returned 203 games, but they came entirely from another player's archive (odoiheud: 197 games, dambi333: 6). Those are opponent rows, not the account's own history; only 12 of them are blitz.
+- The sync request covering that period was for qbui, not quangbufi, and returned zero games for every month. The correct fix is to sync the exact username quangbufi.
+- Added a Chess.com existence check when a month is empty: a 404 now raises Chess.com username not found instead of completing as an empty month. Two tests cover existing-but-empty and misspelled accounts; suite is 44 passed.

@@ -6,7 +6,7 @@
 - Username history sync from both Chess.com and Lichess passed download → Delta → MinIO → Spark comparison → Trino publication. Explicit sync button uses a selected month range and cap, not an unrestricted account crawl.
 - Public Lichess game eRIlxQlE was observed through resignation, then automatically queued and published as a finished game. Live updates are source-delayed; Chess.com live is not implemented.
 - Published release after first live ingestion: r_79b2a4f399dc48cbad86b447d1c730cc. Re-import checks may produce a newer release without increasing unique counts.
-- 42 unit tests passed. Real Trino overview/profile/replay/habits parity and all seven C1–C7 views passed again on 2026-11-03; recognized Rated Blitz cube contains 1,991 games.
+- 44 unit tests passed. Real Trino overview/profile/replay/habits parity and all seven C1–C7 views passed again on 2026-11-03; recognized Rated Blitz cube contains 1,991 games.
 - Dagster 1.13.28 webserver/daemon verified running with both schedules and the user-request sensor `RUNNING`.
 - Real dashboard screenshots (overview, player profile, opening analysis, delayed live observer) are committed under `docs/images/` and captured with Playwright, not mocked.
 - Prediction navigation removed. Traceability navigation hidden; backend retained. Overview no longer displays the internal release ID.
