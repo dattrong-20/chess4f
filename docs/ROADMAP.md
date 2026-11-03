@@ -17,9 +17,9 @@ This roadmap separates implemented code from validated deployment. It does not r
 - [x] S3-compatible object storage with explicit credentials/secrets handling
 - [x] Spark processing job sharing the data contract, matching local gold totals
 - [x] Trino + appropriate metastore/catalog, registered Delta tables, SQL comparison
-- [ ] Controlled Docker profiles fitting 16 GB RAM (jobs need not run simultaneously)
+- [x] Controlled Docker profiles fitting 16 GB RAM (Compose `jobs`/`compute`, not simultaneous)
 - [x] Snapshot publication: readers consume a coherent run across multiple tables
-- [ ] Partition strategy / compaction / retention without destroying required snapshots
+- [x] Partition strategy / compaction / retention: Silver+Gold by `year_month`, `chess4f compact` with a 168h vacuum floor
 
 ## M3 — incremental collection and operations
 - [x] Calendar month planner and bounded sequential backfill CLI
@@ -28,7 +28,8 @@ This roadmap separates implemented code from validated deployment. It does not r
 - [ ] Adjacent-source UTC boundary coverage; observed-coverage ledger added (`chess4f coverage`, docs/COVERAGE.md)
 - [x] Dagster schedules, bounded read/publication retries, run UI and capped Lichess refresh
 - [ ] Additional source quotas and unattended multi-day validation
-- [ ] Efficient no-op re-import and partition-scoped gold refresh
+- [x] Partition-scoped Gold refresh (only touched months are recomputed)
+- [ ] No-op re-import that avoids republishing unchanged data
 - [x] Fresh player sync from UI using bounded Dagster background jobs
 
 ## M4 — product and prediction
@@ -47,7 +48,7 @@ This roadmap separates implemented code from validated deployment. It does not r
 - [ ] Kafka integration if it adds replay/consumer value; do not pretend JSONL is Kafka
 
 ## GitHub / CV
-- [x] Public repository and Linux CI workflow; latest local suite: 33 tests
-- [ ] Screenshots and reproducible demonstration recording
+- [x] Public repository and Linux CI workflow; latest local suite: 52 tests
+- [x] Real screenshots committed (`docs/images/`) and Playwright capture scripts; video reproducible locally
 - [x] CV description describes only validated capabilities (docs/CV.md)
-- [ ] Benchmark actual throughput, latency, memory and recovery behavior
+- [x] Synthetic throughput benchmarks recorded (20k games 110s, 100k games 562s); not a production-scale test

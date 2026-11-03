@@ -156,3 +156,11 @@ With the Docker stack already running and the host Dagster restarted through `sc
 
 - A follow-up Chess.com sync for `dambi333` covering 2026-01..2026-10 completed and published `r_5b43ca80eff54877bfbb5d62e6092757`: 107,155 games (7,144 Chess.com), 7,369,425 moves, 7,174 opening aggregates, 214,310 player rows. The extra 132 games land in March-June.
 - Dashboard cleanup: removed the tagline, the "Phạm vi đã nhập" range caption and the opening-analysis "Bản dữ liệu" caption.
+
+## 2026-11-03 final review
+
+- Full unit suite: **52 passed**. scripts/verify-serving.py and scripts/verify-openings.py passed against release 
+_5b43ca80eff54877bfbb5d62e6092757 (C1-C7, cube 74,934 recognized blitz games).
+- Services checked: API /health and /health/deep ok, Trino ready, Dagster daemon and webserver up, both schedules and the request sensor RUNNING; GitHub Actions badge passing.
+- Documentation audit: README links resolve, no TODO/FIXME markers, dataset numbers match the manifest.
+- Remaining, explicitly out of the current scope: no-op re-import without republishing, incremental release snapshots, adjacent-month UTC coverage, unattended multi-day operation, HA/TLS/OIDC/backup, and million-game scale tests.
