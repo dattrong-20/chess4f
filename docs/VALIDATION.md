@@ -151,3 +151,8 @@ With the Docker stack already running and the host Dagster restarted through `sc
 - Synced `magnuscarlsen`, `liemle` (Le Quang Liem), `wonderfultime` (Tuan Minh Le) and `duhless` (Daniil Dubov) for 2026-08..2026-10 with a 3,000-game cap each. Accepted 431 / 293 / 1,663 / 1,179 games; 19 Carlsen games were quarantined as nonstandard initial positions (Chess960 variants).
 - Published `r_f5e764cd1e4f446485f0210873a82d2b`: 107,023 games (100,011 Lichess / 7,012 Chess.com), 7,361,710 moves, 7,092 opening aggregates, 214,046 player rows. Spark parity and Trino publication passed.
 - Profiles: magnuscarlsen 432, liemle 294, wonderfultime 1,697, duhless 1,180 imported games.
+
+## 2026-11-03 dambi333 full-year sync and UI cleanup
+
+- A follow-up Chess.com sync for `dambi333` covering 2026-01..2026-10 completed and published `r_5b43ca80eff54877bfbb5d62e6092757`: 107,155 games (7,144 Chess.com), 7,369,425 moves, 7,174 opening aggregates, 214,310 player rows. The extra 132 games land in March-June.
+- Dashboard cleanup: removed the tagline, the "Phạm vi đã nhập" range caption and the opening-analysis "Bản dữ liệu" caption.

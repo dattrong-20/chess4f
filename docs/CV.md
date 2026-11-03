@@ -18,7 +18,7 @@ Python 3.11 · Delta Lake (delta-rs) · DuckDB · PyArrow · MinIO S3 · Apache 
 ## English bullets
 
 - Built an end-to-end chess data platform ingesting public Lichess and Chess.com
-  games into Bronze/Silver/Gold Delta tables: 107,023 games and 7,361,710 move rows,
+  games into Bronze/Silver/Gold Delta tables: 107,155 games and 7,369,425 move rows,
   with content-addressed source objects (SHA-256), stable platform game IDs,
   idempotent upserts, quarantine and run manifests.
 - Implemented immutable release publication: snapshot under a writer lock,
@@ -67,7 +67,7 @@ Python 3.11 · Delta Lake (delta-rs) · DuckDB · PyArrow · MinIO S3 · Apache 
 
 | Claim | Evidence |
 |---|---|
-| 107,023 games / 7,361,710 moves | published release manifest `data/published/latest.json` |
+| 107,155 games / 7,369,425 moves | published release manifest `data/published/latest.json` |
 | Spark + Trino parity before publish | `lakehouse.validate_publish`, `jobs/build_gold.py`, docs/LAKEHOUSE.md |
 | Trino-only serving, 503 on failure | `src/chess4f/trino_serving.py`, `tests/test_serving.py` |
 | Dagster jobs/schedules/queue | `src/chess4f/definitions.py`, docs/ORCHESTRATION.md |

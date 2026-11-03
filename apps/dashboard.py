@@ -121,7 +121,6 @@ SPEED_NAMES = {"blitz": "Blitz", "rapid": "Cờ 10 phút (Rapid)", "bullet": "Bu
                "classical": "Classical", "all": "Tất cả thể thức"}
 BOARD_COLORS = {"square light": "#EEEED2", "square dark": "#769656"}
 st.title("chess4f")
-st.caption("Khám phá khai cuộc · Hiểu lịch sử thi đấu · Theo dõi dữ liệu")
 st.sidebar.title("chess4f")
 st.sidebar.caption("CHESS ANALYTICS WORKSPACE")
 section = st.sidebar.radio("Không gian phân tích", ["Tổng quan", "Khai cuộc C1–C7", "Hồ sơ cá nhân", "Ván đấu", "Live observer", "Nhập dữ liệu"])
@@ -146,7 +145,6 @@ if section == "Tổng quan":
         a.metric("Ván đã nhập", f'{s["games"]:,}', border=True)
         b.metric("Nhận diện được", f'{s["recognized"]:,}', border=True)
         c.metric("Nhóm khai cuộc", s["opening_families"], border=True)
-        st.caption(f'Phạm vi đã nhập: {s["first_game"]} → {s["last_game"]}')
         with st.expander("Phạm vi mẫu và cách cập nhật", expanded=False):
             if source == "lichess":
                 st.write("Mỗi lượt thu thập demo giới hạn 1.000 ván Rated Blitz đầu tiên khớp tháng. Bộ mẫu ban đầu tháng 9 và tháng 10/2026 gồm 2.000 ván; đồng bộ người chơi và ván trực tiếp có thể bổ sung dữ liệu; đây không phải giới hạn lưu trữ của hệ thống.")
