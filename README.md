@@ -30,7 +30,7 @@ The capture script is `scripts/capture-demo.py`; generated screenshots and video
 - Dagster source checks and capped refresh schedules, with Spark validation before release publication.
 - Observed-coverage ledger (`chess4f coverage`) reporting imported games per source/month/day and UTC boundary exposure; it documents sample shape, not completeness.
 - Player results, openings, opponents, game replay and personal move frequencies with an explicit historical cutoff.
-- Background username-history synchronization and monthly backfill via a durable Dagster request queue, with progress and retry from the UI. The old model experiment is not exposed in the application.
+- Background username-history synchronization and monthly backfill via a durable Dagster request queue, with progress and retry from the UI; an empty profile can auto-queue a bounded history fetch. The old model experiment is not exposed in the application.
 - Lichess public delayed stream receiver, raw event journal and observer UI. Not a Board API client, engine or player-assistance tool.
 - FastAPI, Streamlit, Docker Compose and automated tests.
 

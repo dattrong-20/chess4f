@@ -101,6 +101,12 @@ def submit_request(payload: dict):
         raise HTTPException(422, str(exc)) from exc
 
 
+@app.get("/requests")
+def request_list(limit: int = Query(50, ge=1, le=200)):
+    from .requests_queue import list_requests
+    return list_requests(data_root(), limit)
+
+
 @app.get("/requests/{request_id}")
 def request_status(request_id: str):
     from .requests_queue import read_request

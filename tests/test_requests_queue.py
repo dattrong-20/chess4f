@@ -4,8 +4,9 @@ import pytest
 from chess4f import requests_queue as queue
 
 
-def payload(**kwargs):
-    return dict(kind="player", source="lichess", username="tester", start="2026-09", end="2026-10", limit=10, **kwargs)
+def payload(start="2026-09", end="2026-10", limit=10, username="tester", **kwargs):
+    return dict(kind="player", source="lichess", username=username, start=start,
+                end=end, limit=limit, **kwargs)
 
 
 def test_queue_deduplicates_active_request(tmp_path):
@@ -65,3 +66,11 @@ def test_retry_rejects_a_request_that_did_not_fail(tmp_path):
     request = queue.enqueue(tmp_path, payload())
     with pytest.raises(ValueError, match="Only failed"):
         queue.retry_request(tmp_path, request["id"])
+
+
+def test_list_requests_is_newest_first_and_limited(tmp_path):
+    queue.enqueue(tmp_path, payload(start="2026-07"))
+    second = queue.enqueue(tmp_path, payload(start="2026-08"))
+    newest = queue.list_requests(tmp_path, limit=1)
+    assert len(newest) == 1 and newest[0]["id"] == second["id"]
+    assert len(queue.list_requests(tmp_path)) == 2

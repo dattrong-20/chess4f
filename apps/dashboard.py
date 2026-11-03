@@ -88,10 +88,14 @@ elif section == "Khai cuộc C1–C7":
 elif section == "Hồ sơ cá nhân":
     source = st.selectbox("Nền tảng", ["chesscom", "lichess", "import"], format_func=SOURCE_NAMES.get)
     username = st.text_input("Username", "hikaru")
-    from sync_panel import player_sync
+    auto = st.checkbox("Tự động tải lịch sử nếu tài khoản chưa có trong kho dữ liệu", value=True,
+                       help="Tải tối đa 3 tháng gần nhất, 1.000 ván/tháng, rồi công bố qua Spark/Trino. Không cần chạy backfill tổng quan trước.")
+    from sync_panel import auto_sync_if_missing, player_sync
     player_sync(API, source, username)
     if username:
         data = get(f"/players/{source}/{username}")
+        if data and data["summary"]["games"] == 0 and auto:
+            data = auto_sync_if_missing(API, source, username)
         if data:
             from player_profile_view import render
             render(data)

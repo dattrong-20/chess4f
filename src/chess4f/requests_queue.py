@@ -63,6 +63,18 @@ def read_request(root, request_id):
     return json.loads(request_path(root, request_id).read_text(encoding="utf-8"))
 
 
+def list_requests(root, limit=50):
+    """Newest first; used by the UI to find an active sync for a player."""
+    items = []
+    for path in (Path(root) / "requests").glob("*.json"):
+        try:
+            items.append(json.loads(path.read_text(encoding="utf-8")))
+        except (OSError, ValueError):
+            continue
+    items.sort(key=lambda item: item.get("created_at", ""), reverse=True)
+    return items[:max(1, limit)]
+
+
 def process(root, project, request_id, context=None):
     item = read_request(root, request_id)
     if item["status"] == "complete":
