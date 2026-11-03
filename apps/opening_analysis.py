@@ -52,8 +52,10 @@ def render(payload):
         table = table[table.opening_family.isin(top) & (table.n_games >= minimum)]
         if not table.empty:
             matrix = table.pivot(index="opening_family", columns="rating_group", values="score_pct").reindex(index=top, columns=chosen_groups)
-            fig = px.imshow(matrix, text_auto=".1f", zmin=0, zmax=100, color_continuous_scale="RdBu", color_continuous_midpoint=50, labels={"color": "Điểm Trắng (%)"}, aspect="auto")
-        st.caption("Ô trống là không có quan sát hoặc chưa đủ mẫu; không phải điểm bằng 0%.")
+            matrix.index.name = "Nhóm khai cuộc"
+            matrix.columns.name = "Nhóm Elo"
+            fig = px.imshow(matrix, text_auto=".1f", zmin=40, zmax=60, color_continuous_scale="RdBu", color_continuous_midpoint=50, labels={"color": "Điểm Trắng (%)"}, aspect="auto")
+        st.caption("Thang màu 40–60%. Ô trống là không có quan sát hoặc chưa đủ mẫu; không phải điểm bằng 0%.")
     elif view.startswith("C5"):
         table = totals[totals.n_games >= minimum]
         fig = px.scatter(table, x="popularity_pct", y="score_pct", hover_name="opening_family", size="n_games", size_max=35, labels={"popularity_pct": "Tỷ trọng (%)", "score_pct": "Điểm Trắng (%)"})
