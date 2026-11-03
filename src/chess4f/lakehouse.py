@@ -73,7 +73,8 @@ def snapshot(root):
                 for name in TABLES:
                     count = con.execute(f"SELECT count(*) FROM {name.replace('/', '_')}").fetchone()[0]
                     table = con.execute(f"SELECT * FROM {name.replace('/', '_')}").to_arrow_reader(65536)
-                    write_deltalake(str(destination / name), table)
+                    partitions = lake.partition_columns(name)
+                    write_deltalake(str(destination / name), table, partition_by=partitions or None)
                     manifest["tables"][name] = {"rows": count, "snapshot_version": 0}
         manifest["status"] = "exported"
     except Exception as exc:

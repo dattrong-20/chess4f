@@ -104,8 +104,8 @@ compare against.
 
 ## Scaling path (not implemented)
 
-1. Partition Silver and Gold by `year_month`, then refresh only affected
-   partitions instead of rewriting whole aggregate tables.
+1. Partition Silver by `year_month` (Gold is already partitioned and refreshed
+   partition-scoped) and prune its MERGE scans.
 2. Replace full snapshot export with incremental release manifests.
 3. Schedule compaction/retention with explicit snapshot retention.
 4. Migrate the metastore from embedded Derby to PostgreSQL for concurrent use.

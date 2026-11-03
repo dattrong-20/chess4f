@@ -35,10 +35,14 @@ Python 3.11 · Delta Lake (delta-rs) · DuckDB · PyArrow · MinIO S3 · Apache 
 - Added an observed-coverage ledger that reports games per source/month/day and
   UTC boundary exposure, so sample shape is documented instead of implied by a
   total.
-- Wrote 44 pytest tests covering repeat-ingest idempotency, quarantine,
+- Wrote 50 pytest tests covering repeat-ingest idempotency, quarantine,
   correction of obsolete move tails, temporal leakage cutoffs, SQL literal
   binding, release pinning, parity-failure pointer preservation, and queue
   retry semantics.
+
+- Hardened the lakehouse: Gold partitioned by month with partition-scoped
+  rebuilds, Delta compaction and retention-bounded vacuum, optional bearer-token
+  write auth, Prometheus metrics and deep health checks.
 
 ## Vietnamese bullets
 
@@ -55,7 +59,7 @@ Python 3.11 · Delta Lake (delta-rs) · DuckDB · PyArrow · MinIO S3 · Apache 
   và retry theo tháng.
 - Thêm coverage ledger báo số ván theo nguồn/tháng/ngày và rủi ro biên UTC, buộc
   phạm vi mẫu phải minh bạch thay vì suy ra từ tổng số.
-- 44 test pytest cho idempotency, quarantine, sửa đuôi nước đi cũ, chặn rò rỉ
+- 50 test pytest cho idempotency, quarantine, sửa đuôi nước đi cũ, chặn rò rỉ
   tương lai, bind SQL, pin release, giữ nguyên pointer khi parity lỗi.
 
 ## Evidence
@@ -67,7 +71,7 @@ Python 3.11 · Delta Lake (delta-rs) · DuckDB · PyArrow · MinIO S3 · Apache 
 | Trino-only serving, 503 on failure | `src/chess4f/trino_serving.py`, `tests/test_serving.py` |
 | Dagster jobs/schedules/queue | `src/chess4f/definitions.py`, docs/ORCHESTRATION.md |
 | Coverage ledger | `src/chess4f/coverage.py`, docs/COVERAGE.md |
-| Test count | `pytest -q` → 44 passed |
+| Test count | `pytest -q` → 50 passed |
 | Real UI screenshots | `docs/images/*.png` captured with Playwright, embedded in README |
 
 ## Do not claim

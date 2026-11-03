@@ -7,6 +7,7 @@ services:
     environment:
       CHESS4F_DATA: /data
       CHESS4F_TRINO: http://trino:8080
+      CHESS4F_API_TOKEN: ${CHESS4F_API_TOKEN:-}
     volumes: ["./data:/data"]
     mem_limit: 2g
     cpus: 2

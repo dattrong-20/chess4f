@@ -61,8 +61,18 @@ class Lake:
                                    source_alias="s", target_alias="t")
              .when_matched_update_all().when_not_matched_insert_all().execute())
 
-    def overwrite(self, name, table):
-        write_deltalake(str(self.path(name)), table, mode="overwrite", schema_mode="overwrite")
+    def overwrite(self, name, table, partition_by=None, predicate=None):
+        kwargs = dict(mode="overwrite", schema_mode="overwrite")
+        if partition_by:
+            kwargs["partition_by"] = partition_by
+        if predicate:
+            kwargs["predicate"] = predicate
+        write_deltalake(str(self.path(name)), table, **kwargs)
+
+    def partition_columns(self, name):
+        if not self.exists(name):
+            return []
+        return list(DeltaTable(str(self.path(name))).metadata().partition_columns)
 
     def connection(self):
         con = duckdb.connect()
@@ -76,7 +86,7 @@ class Lake:
             active = DeltaTable(str(self.path(name))).file_uris() if self.exists(name) else []
             if active:
                 # DuckDB's native reader handles parquet written after delta-rs MERGE.
-                con.read_parquet(active, union_by_name=True).create_view(name.replace("/", "_"))
+                con.read_parquet(active, union_by_name=True, hive_partitioning=True).create_view(name.replace("/", "_"))
             else:
                 con.register(name.replace("/", "_"), pa.Table.from_pylist([], schema=schema))
         return con

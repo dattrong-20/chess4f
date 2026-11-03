@@ -1,8 +1,11 @@
+import collections
 import json
+import os
+
 import httpx
 
-from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import JSONResponse
+from fastapi import Depends, FastAPI, Header, HTTPException, Query
+from fastapi.responses import JSONResponse, PlainTextResponse
 
 from .trino_serving import game_detail, move_habits, overview, player_profile, opening_cube
 from .config import data_root
@@ -10,6 +13,46 @@ from .live import parse_game_id
 from .storage import Lake
 
 app = FastAPI(title="chess4f", version="0.1.0", description="Read-only analytics API. Local-first; no public deployment authentication yet.")
+
+METRICS = collections.Counter()
+
+
+def require_write_token(authorization: str | None = Header(default=None)):
+    """Require a bearer token for write routes when CHESS4F_API_TOKEN is set."""
+    token = os.environ.get("CHESS4F_API_TOKEN")
+    if token and authorization != f"Bearer {token}":
+        raise HTTPException(401, "Missing or invalid API token")
+
+
+@app.middleware("http")
+async def count_requests(request, call_next):
+    response = await call_next(request)
+    METRICS[(request.method, request.url.path, response.status_code)] += 1
+    return response
+
+
+@app.get("/metrics")
+def metrics():
+    lines = [f'chess4f_http_requests_total{{method="{method}",path="{path}",status="{status}"}} {count}'
+             for (method, path, status), count in sorted(METRICS.items())]
+    pointer = data_root() / "published/latest.json"
+    if pointer.exists():
+        release = json.loads(pointer.read_text(encoding="utf-8")).get("release_id", "")
+        lines.append(f'chess4f_published_release_info{{release="{release}"}} 1')
+    return PlainTextResponse("\n".join(lines) + "\n")
+
+
+@app.get("/health/deep")
+def deep_health():
+    from . import lakehouse
+    pointer = data_root() / "published/latest.json"
+    if not pointer.exists():
+        return JSONResponse(status_code=503, content={"status": "no_published_release"})
+    try:
+        lakehouse.sql("SELECT 1")
+    except Exception as exc:
+        return JSONResponse(status_code=503, content={"status": "trino_unavailable", "error": str(exc)[:200]})
+    return {"status": "ok"}
 
 
 @app.get("/health")
@@ -94,7 +137,7 @@ def openings(source: str = "lichess", speed: str = "blitz"):
         raise HTTPException(422, str(exc)) from exc
 
 
-@app.post("/requests", status_code=202)
+@app.post("/requests", status_code=202, dependencies=[Depends(require_write_token)])
 def submit_request(payload: dict):
     from .requests_queue import enqueue
     try:
@@ -129,7 +172,7 @@ def live_discovery(username: str):
         raise HTTPException(422, str(exc)) from exc
 
 
-@app.post("/live-observers/{game_id}")
+@app.post("/live-observers/{game_id}", dependencies=[Depends(require_write_token)])
 def start_observer(game_id: str):
     from .live_service import start
     try:
@@ -138,7 +181,7 @@ def start_observer(game_id: str):
         raise HTTPException(422, str(exc)) from exc
 
 
-@app.delete("/live-observers/{game_id}")
+@app.delete("/live-observers/{game_id}", dependencies=[Depends(require_write_token)])
 def stop_observer(game_id: str):
     from .live_service import stop
     try:
@@ -147,7 +190,7 @@ def stop_observer(game_id: str):
         raise HTTPException(422, str(exc)) from exc
 
 
-@app.post("/requests/{request_id}/retry", status_code=202)
+@app.post("/requests/{request_id}/retry", status_code=202, dependencies=[Depends(require_write_token)])
 def retry_user_request(request_id: str):
     from .requests_queue import retry_request
     try:

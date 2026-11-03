@@ -5,7 +5,7 @@ from pathlib import Path
 from .analytics import overview
 from .config import data_root
 from .live import observe
-from .storage import atomic_json
+from .storage import TABLES, atomic_json
 from .openings import download_catalog
 from .pipeline import ingest_pgn
 from .sources import chesscom_archive, lichess_day, month_plan
@@ -46,6 +46,10 @@ def main():
     p = sub.add_parser("coverage", help="Observed per-month coverage ledger; not a completeness claim")
     p.add_argument("--source", choices=["lichess", "chesscom", "import"])
     p.add_argument("--write", action="store_true", help="Also save the ledger under data/metadata/coverage.json")
+    p = sub.add_parser("compact", help="Compact Delta files and optionally vacuum with retention")
+    p.add_argument("--table", action="append", choices=list(TABLES))
+    p.add_argument("--retention-hours", type=int, default=168)
+    p.add_argument("--vacuum", action="store_true", help="Delete files older than retention (default is dry run)")
     args = parser.parse_args()
     root = data_root()
     if args.command == "catalog":
@@ -79,6 +83,9 @@ def main():
             path = Path(root) / "metadata/coverage.json"
             atomic_json(path, result)
             result["ledger_path"] = str(path)
+    elif args.command == "compact":
+        from .maintenance import compact
+        result = compact(root, args.table, args.retention_hours, args.vacuum)
     else:
         result = overview(root)
     print(json.dumps(result, indent=2, ensure_ascii=False))

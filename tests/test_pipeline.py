@@ -126,3 +126,15 @@ def test_player_profile_separates_own_archive_from_opponent_rows(lake_root, pgn_
     opponent = player_profile(lake_root, "lichess", "bob")
     assert opponent["summary"]["games"] == 2
     assert opponent["summary"]["own_archive_games"] == 0
+
+
+def test_gold_is_partitioned_and_refreshes_only_touched_months(lake_root, pgn_file):
+    ingest_pgn(lake_root, pgn_file, "lichess")
+    lake = Lake(lake_root)
+    assert lake.partition_columns("gold/openings") == ["year_month"]
+    pgn_file.write_text(pgn("OcT12345", "2026.10.01"), encoding="utf-8")
+    ingest_pgn(lake_root, pgn_file, "lichess")
+    with lake.connection() as con:
+        counts = dict(con.execute(
+            "SELECT year_month, sum(n_games) FROM gold_openings GROUP BY 1 ORDER BY 1").fetchall())
+    assert counts == {"2026-09": 2, "2026-10": 1}

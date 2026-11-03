@@ -95,31 +95,50 @@ def transform(game, source, source_uri, run_id, record_id, catalog):
     return row, moves
 
 
-def rebuild_gold(lake):
+def _write_gold(lake, name, table, months):
+    """Rewrite Gold, scoped to the touched month partitions when possible."""
+    partitioned = lake.partition_columns(name) == ["year_month"]
+    if months and partitioned:
+        clean = [m for m in months if re.fullmatch(r"\d{4}-\d{2}", m)]
+        if clean:
+            predicate = "year_month IN (" + ", ".join(f"'{m}'" for m in clean) + ")"
+            lake.overwrite(name, table, partition_by=["year_month"], predicate=predicate)
+            return
+    lake.overwrite(name, table, partition_by=["year_month"])
+
+
+def rebuild_gold(lake, months=None):
+    """Rebuild Gold; with months, only those partitions are recomputed."""
+    months = sorted(set(months)) if months else None
+    clause = ""
+    if months:
+        clause = " AND year_month IN (" + ", ".join("?" for _ in months) + ")"
     with lake.connection() as con:
-        openings = con.execute("""
+        openings = con.execute(f"""
             SELECT source, year_month, speed, rating_group, opening_family,
                    count(*)::BIGINT n_games,
                    sum((result='1-0')::INTEGER)::BIGINT white_wins,
                    sum((result='1/2-1/2')::INTEGER)::BIGINT draws,
                    sum((result='0-1')::INTEGER)::BIGINT black_wins,
                    sum(white_score)::DOUBLE white_score_sum
-            FROM silver_games WHERE rated AND opening_family IS NOT NULL
+            FROM silver_games WHERE rated AND opening_family IS NOT NULL{clause}
             GROUP BY ALL
-        """).to_arrow_reader(65536)
-        lake.overwrite("gold/openings", openings)
-        players = con.execute("""
+        """, months or []).to_arrow_reader(65536)
+        _write_gold(lake, "gold/openings", openings, months)
+        players = con.execute(f"""
             SELECT source, white player, black opponent, game_key, played_at, year_month, speed,
                    'white' color, opening_family,
                    CASE white_score WHEN 1 THEN 'win' WHEN 0 THEN 'loss' ELSE 'draw' END outcome,
-                   white_elo rating, black_elo opponent_rating, white_score score FROM silver_games
+                   white_elo rating, black_elo opponent_rating, white_score score
+            FROM silver_games WHERE 1=1{clause}
             UNION ALL
             SELECT source, black, white, game_key, played_at, year_month, speed,
                    'black', opening_family,
                    CASE white_score WHEN 0 THEN 'win' WHEN 1 THEN 'loss' ELSE 'draw' END,
-                   black_elo, white_elo, 1-white_score FROM silver_games
-        """).to_arrow_reader(65536)
-        lake.overwrite("gold/player_games", players)
+                   black_elo, white_elo, 1-white_score
+            FROM silver_games WHERE 1=1{clause}
+        """, (months or []) * 2).to_arrow_reader(65536)
+        _write_gold(lake, "gold/player_games", players, months)
 
 
 def ingest_pgn(root, path, source="import", start=None, end=None, limit=None, source_uri=None):
@@ -147,6 +166,7 @@ def ingest_pgn(root, path, source="import", start=None, end=None, limit=None, so
     report_path = Path(root) / "metadata/runs" / f"{run_id}.json"
     atomic_json(report_path, report)
     bronze, clean, moves, bad = [], [], [], []
+    touched = set()
     def flush():
         lake.upsert("bronze/games", bronze, "record_id")
         lake.upsert("silver/quarantine", bad, "record_id")
@@ -175,6 +195,7 @@ def ingest_pgn(root, path, source="import", start=None, end=None, limit=None, so
                         report["filtered"] += 1
                     else:
                         clean.append(row); moves.extend(game_moves)
+                        touched.add(row["year_month"])
                         report["accepted"] += 1
                         report["selected"] += 1
                 except ValueError as exc:
@@ -187,7 +208,7 @@ def ingest_pgn(root, path, source="import", start=None, end=None, limit=None, so
                     report["status"] = "limited"
                     break
             flush()
-            rebuild_gold(lake)
+            rebuild_gold(lake, sorted(touched) or None)
             report["status"] = "complete" if report["status"] == "running" else report["status"]
             report["versions"] = lake.versions()
     except Exception as exc:

@@ -123,3 +123,12 @@ With the Docker stack already running and the host Dagster restarted through `sc
 - Player profiles now report `own_archive_games` from source URIs, so an account that only appears as an opponent is no longer treated as imported: the UI explains the provenance and the auto-fetch triggers. A misspelled Chess.com username raises "not found" instead of an empty month.
 - UI restyle: light chess.com-inspired palette (green accent), card metrics, rounded containers and the classic green board palette for replay/live.
 - Full suite: **46 passed**; `verify-serving.py` passed; screenshots recaptured.
+
+## 2026-11-03 T1 hardening: partitions, maintenance, auth, monitoring
+
+- Gold tables are now partitioned by `year_month`, and ingestion rebuilds only the touched month partitions; DuckDB reconstructs partition columns through hive partitioning so snapshots and reference checks keep the column.
+- `chess4f compact` compacts active Delta files and performs a retention-bounded vacuum (168-hour floor, dry-run unless `--vacuum`). Verified as a dry run on the Gold tables.
+- Re-published release `r_c9809b10d3d14c8c98e4344ee9092a18` after the layout migration: 6,014 games, 1,115 opening aggregates and 12,028 player rows; Spark parity and Trino publication passed.
+- Synthetic benchmark: 20,000 games / 120,000 moves in **109.64 s** ingestion and **112.10 s** including snapshot (previous checkpoint: 10,000 games in 44.46 s).
+- API operations: optional `CHESS4F_API_TOKEN` on POST/DELETE, `/metrics` request counters plus the published-release gauge, and `/health/deep` checking the pointer and Trino.
+- Full suite: **50 passed**; `verify-serving.py` passed on the partitioned release.

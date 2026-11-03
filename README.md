@@ -28,6 +28,7 @@ The capture script is `scripts/capture-demo.py`; generated screenshots and video
 - Public Chess.com monthly player archives and a bounded Lichess archive extractor.
 - Trino-only application analytics pinned to a validated published release; DuckDB remains internal for transformation, training and reference checks.
 - Dagster source checks and capped refresh schedules, with Spark validation before release publication.
+- Gold tables partitioned by `year_month` with partition-scoped rebuilds; `chess4f compact` compacts Delta files and vacuums with a seven-day retention floor.
 - Observed-coverage ledger (`chess4f coverage`) reporting imported games per source/month/day and UTC boundary exposure; it documents sample shape, not completeness.
 - Player results, openings, opponents, game replay and personal move frequencies with an explicit historical cutoff.
 - Background username-history synchronization and monthly backfill via a durable Dagster request queue, with progress and retry from the UI; an empty profile can auto-queue a bounded history fetch. The old model experiment is not exposed in the application.
@@ -94,7 +95,7 @@ Start API and UI in two terminals:
 
 - Dashboard: http://localhost:8501
 - API docs: http://localhost:8000/docs
-- API includes local job-submission endpoints. Keep its localhost binding: public-user authentication is not implemented.
+- API includes local job-submission endpoints. Set `CHESS4F_API_TOKEN` to require a bearer token on write routes; `/metrics` and `/health/deep` expose operations signals. Keep the localhost binding.
 
 ## Docker
 
@@ -118,6 +119,9 @@ chess4f plan --start 2026-01
 
 # Observed coverage per source/month/day; not proof of complete months.
 chess4f coverage --source lichess
+
+# Delta maintenance: compact and dry-run vacuum (168h floor); --vacuum to delete.
+chess4f compact --table gold/openings
 
 # Bounded backfill integration run: never marks a limited source scan as complete.
 chess4f sync-months --start 2026-09 --end 2026-09 --limit 1000
