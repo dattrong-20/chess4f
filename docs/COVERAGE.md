@@ -2,7 +2,7 @@
 
 `chess4f coverage [--source lichess|chesscom|import] [--write]` reads the local
 Silver table and prints what was actually imported per source, month and day.
-It exists because a single total ("103,511 games") hides *where inside a month*
+It exists because a single total ("107,023 games") hides *where inside a month*
 those games came from.
 
 This is an operational artifact, not a published Delta table and not a
@@ -66,14 +66,14 @@ checkpoint exists.
 | lichess | 100,011 | 2026-09 | 10,000 | 1 | 10,000 | 0 | none |
 | lichess | 100,011 | 2026-10 | 10,010 | 2 | 10,000 | 10 | none |
 | lichess | 100,011 | 2026-11 | 1 | 1 | 0 | 0 | none |
-| chesscom | 3,500 | 2026-03 | 295 | 17 | 6 | 0 | none |
-| chesscom | 3,500 | 2026-04 | 177 | 15 | 0 | 0 | none |
-| chesscom | 3,500 | 2026-05 | 488 | 17 | 0 | 0 | none |
-| chesscom | 3,500 | 2026-06 | 709 | 24 | 0 | 29 | none |
-| chesscom | 3,500 | 2026-07 | 588 | 22 | 41 | 47 | none |
-| chesscom | 3,500 | 2026-08 | 548 | 21 | 100 | 0 | none |
-| chesscom | 3,500 | 2026-09 | 601 | 21 | 0 | 4 | none |
-| chesscom | 3,500 | 2026-10 | 94 | 15 | 0 | 0 | none |
+| chesscom | 7,012 | 2026-03 | 295 | 17 | 6 | 0 | none |
+| chesscom | 7,012 | 2026-04 | 177 | 15 | 0 | 0 | none |
+| chesscom | 7,012 | 2026-05 | 488 | 17 | 0 | 0 | none |
+| chesscom | 7,012 | 2026-06 | 709 | 24 | 0 | 29 | none |
+| chesscom | 7,012 | 2026-07 | 588 | 22 | 41 | 47 | none |
+| chesscom | 7,012 | 2026-08 | 1,281 | 31 | 161 | 17 | none |
+| chesscom | 7,012 | 2026-09 | 2,207 | 28 | 54 | 91 | none |
+| chesscom | 7,012 | 2026-10 | 1,267 | 28 | 26 | 47 | none |
 
 Conclusions the project must keep stating:
 

@@ -2,7 +2,7 @@
 
 ## Verified current functionality
 - Unified Compose: MinIO, Hive Metastore, Trino, FastAPI and Streamlit; Spark runs as an on-demand local job. Dagster runs on the host.
-- 103,511 unique real games: 100,011 Lichess and 3,500 Chess.com, 7,047,963 move rows. Lichess covers 10 monthly first-match caps (all on each month's first day) plus Rated Rapid; it is not a platform-wide population.
+- 107,023 unique real games: 100,011 Lichess and 7,012 Chess.com, 7,361,710 move rows. Lichess covers 10 monthly first-match caps (all on each month's first day) plus Rated Rapid; it is not a platform-wide population.
 - Username history sync from both Chess.com and Lichess passed download → Delta → MinIO → Spark comparison → Trino publication. Explicit sync button uses a selected month range and cap, not an unrestricted account crawl.
 - Public Lichess game eRIlxQlE was observed through resignation, then automatically queued and published as a finished game. Live updates are source-delayed; Chess.com live is not implemented.
 - Published release after first live ingestion: r_79b2a4f399dc48cbad86b447d1c730cc. Re-import checks may produce a newer release without increasing unique counts.

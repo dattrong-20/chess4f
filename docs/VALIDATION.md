@@ -145,3 +145,9 @@ With the Docker stack already running and the host Dagster restarted through `sc
 - `dambi333` showed 7 games because an earlier Chess.com sync ingested only August 2026 before the metastore failure; September (1) and October (12) were never fetched. The Chess.com PubAPI confirms 7 + 1 + 12 = 20.
 - Auto-fetch did not fire because the profile already had 7 games from its own archive; the zero-own-games guard does not cover partial history.
 - A targeted Chess.com sync for 2026-08..2026-10 added the missing games and published `r_cf01a8750aff4573b0b28fc1e7eff7d4`: 103,511 games, 7,047,963 moves, 3,500 Chess.com games. The profile now reports 20 games (11W / 2D / 7L).
+
+## 2026-11-03 four more Chess.com accounts
+
+- Synced `magnuscarlsen`, `liemle` (Le Quang Liem), `wonderfultime` (Tuan Minh Le) and `duhless` (Daniil Dubov) for 2026-08..2026-10 with a 3,000-game cap each. Accepted 431 / 293 / 1,663 / 1,179 games; 19 Carlsen games were quarantined as nonstandard initial positions (Chess960 variants).
+- Published `r_f5e764cd1e4f446485f0210873a82d2b`: 107,023 games (100,011 Lichess / 7,012 Chess.com), 7,361,710 moves, 7,092 opening aggregates, 214,046 player rows. Spark parity and Trino publication passed.
+- Profiles: magnuscarlsen 432, liemle 294, wonderfultime 1,697, duhless 1,180 imported games.

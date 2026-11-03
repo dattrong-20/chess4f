@@ -42,9 +42,9 @@ Demo sources (bounded samples; see validation notes for publication status):
 | Source | Scope | Games |
 |---|---|---:|
 | Lichess | First 10,000 matching Rated Blitz/Rapid games from each 2026 monthly archive (Jan-Oct, explicit backfill) | 100,011 |
-| Chess.com | Public archives for `hikaru`, `bodoiheud`, `dambi333` and their opponents | 3,500 |
+| Chess.com | Public archives for `hikaru`, `bodoiheud`, `dambi333`, `magnuscarlsen`, `liemle`, `wonderfultime`, `duhless` and their opponents | 7,012 |
 
-Validation added player syncs, one completed observed Lichess game and a 10-month backfill: **103,511 unique games** (100,011 Lichess / 3,500 Chess.com) and 7,047,963 move rows at this checkpoint.
+Validation added player syncs, one completed observed Lichess game and a 10-month backfill: **107,023 unique games** (100,011 Lichess / 7,012 Chess.com) and 7,361,710 move rows at this checkpoint.
 
 The Lichess data is a **bounded integration sample**, not a random or representative monthly sample; each monthly cap selects the first matching Blitz/Rapid games, which all fall on that month's first day. The Chess.com sample is one player's history, not platform-wide data. Sources are selectable and not silently pooled. `chess4f coverage` records this shape per month and day. Data, models, credentials and virtual environments are excluded from Git.
 
