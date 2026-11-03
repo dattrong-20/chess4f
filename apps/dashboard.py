@@ -1,6 +1,7 @@
 """Streamlit front end: Trino-backed analytics and queued ingestion via API."""
 import hmac
 import os
+import re
 
 import chess
 import chess.svg
@@ -50,6 +51,67 @@ def get(path, params=None):
     except (httpx.HTTPError, ValueError) as exc:
         st.error(f"API chưa sẵn sàng / dữ liệu chưa có: {exc}")
         return None
+
+
+def fetch_game(key):
+    """Fetch one game once; a 404 is not an error worth interrupting the UI."""
+    try:
+        response = httpx.get(API + f"/games/{key}", timeout=30)
+        if response.status_code == 404:
+            return None
+        response.raise_for_status()
+        return response.json()
+    except (httpx.HTTPError, ValueError):
+        return None
+
+
+def game_key_from_input(value):
+    text = value.strip()
+    if ":" in text:
+        return text
+    match = re.search(r"chess\.com/game/(?:live|daily)/(\d+)", text)
+    if match:
+        return f"chesscom:{match.group(1)}"
+    match = re.search(r"lichess\.org/(?:game/)?([A-Za-z0-9]{8})", text)
+    if match:
+        return f"lichess:{match.group(1)}"
+    if text.isdigit():
+        return f"chesscom:{text}"
+    return f"lichess:{text}"
+
+
+@st.fragment
+def replay_board(data, key):
+    """Board, arrows and move list; button clicks rerun only this fragment."""
+    game, moves = data["game"], data["moves"]
+    max_ply = len(moves)
+    if st.session_state.get("replay_key") != key:
+        st.session_state["replay_key"] = key
+        st.session_state["replay_ply"] = 0
+    ply = int(st.session_state.get("replay_ply", 0))
+    board = chess.Board(moves[ply-1]["fen_after"]) if ply else chess.Board()
+    left, right = st.columns([1, 1])
+    with left:
+        st.image(chess.svg.board(board, size=450, colors=BOARD_COLORS), width=450)
+        prev_col, info_col, next_col = st.columns([1, 2, 1])
+        if prev_col.button("◀", disabled=ply <= 0, key="ply_prev"):
+            st.session_state["replay_ply"] = max(0, ply - 1)
+            st.rerun(scope="fragment")
+        if next_col.button("▶", disabled=ply >= max_ply, key="ply_next"):
+            st.session_state["replay_ply"] = min(max_ply, ply + 1)
+            st.rerun(scope="fragment")
+        info_col.markdown(
+            f"<div style='text-align:center;padding-top:0.45rem'>Ply {ply} / {max_ply}</div>",
+            unsafe_allow_html=True)
+    with right:
+        st.write(f'{game["white"]} — {game["black"]}')
+        table = pd.DataFrame([
+            {"Ply": move["ply"], "Màu": "Trắng" if move["ply"] % 2 else "Đen",
+             "Mã nước": move["uci"], "SAN": move["san"],
+             "▶": "▶" if move["ply"] == ply else ""}
+            for move in moves
+        ])
+        st.dataframe(table, height=400, hide_index=True, width="stretch")
 
 
 SOURCE_NAMES = {"lichess": "Lichess", "chesscom": "Chess.com", "import": "PGN nhập thủ công"}
@@ -140,32 +202,19 @@ elif section == "Hồ sơ cá nhân":
             from player_profile_view import render
             render(data)
 elif section == "Ván đấu":
-    game_key = st.text_input("Khóa ván: nền_tảng:ID")
-    if game_key:
-        data = get(f"/games/{game_key}")
+    raw = st.text_input("ID ván đấu", placeholder="ví dụ 186015937976 hoặc lichess ID 8 ký tự")
+    if raw:
+        key = game_key_from_input(raw)
+        cache = st.session_state.setdefault("game_cache", {})
+        if key not in cache:
+            fetched = fetch_game(key)
+            if fetched:
+                cache[key] = fetched
+        data = cache.get(key)
         if data:
-            game, moves = data["game"], data["moves"]
-            max_ply = len(moves)
-            if st.session_state.get("replay_game") != game_key:
-                st.session_state["replay_game"] = game_key
-                st.session_state["replay_ply"] = 0
-            ply = int(st.session_state.get("replay_ply", 0))
-            board = chess.Board(moves[ply-1]["fen_after"]) if ply else chess.Board()
-            a,b = st.columns([1,1])
-            with a:
-                st.image(chess.svg.board(board,size=450, colors=BOARD_COLORS), width=450)
-                prev_col, info_col, next_col = st.columns([1, 2, 1])
-                if prev_col.button("◀", disabled=ply <= 0, key="ply_prev"):
-                    st.session_state["replay_ply"] = max(0, ply - 1)
-                    st.rerun()
-                if next_col.button("▶", disabled=ply >= max_ply, key="ply_next"):
-                    st.session_state["replay_ply"] = min(max_ply, ply + 1)
-                    st.rerun()
-                info_col.markdown(
-                    f"<div style='text-align:center;padding-top:0.45rem'>Ply {ply} / {max_ply}</div>",
-                    unsafe_allow_html=True)
-            with b:
-                st.write(f'{game["white"]} — {game["black"]}')
+            replay_board(data, key)
+        else:
+            st.info("Không tìm thấy ván. Kiểm tra ID hoặc nhập dạng nền_tảng:ID.")
 elif section == "Nhập dữ liệu":
     from sync_panel import backfill
     backfill(API)

@@ -67,7 +67,15 @@ def game_detail(root, game_key, *, connection_factory=None):
         games = records(con.execute("SELECT * FROM silver_games WHERE game_key=?", [game_key]))
         if not games:
             return None
-        moves = records(con.execute("SELECT * FROM silver_moves WHERE game_key=? ORDER BY ply", [game_key]))
+        month = games[0].get("year_month")
+        if month:
+            # Prune the partitioned moves table to one month.
+            moves = records(con.execute(
+                "SELECT * FROM silver_moves WHERE game_key=? AND year_month=? ORDER BY ply",
+                [game_key, month]))
+        else:
+            moves = records(con.execute(
+                "SELECT * FROM silver_moves WHERE game_key=? ORDER BY ply", [game_key]))
     return dict(game=games[0], moves=moves)
 
 
