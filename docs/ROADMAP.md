@@ -29,7 +29,7 @@ This roadmap separates implemented code from validated deployment. It does not r
 - [x] Dagster schedules, bounded read/publication retries, run UI and capped Lichess refresh
 - [ ] Additional source quotas and unattended multi-day validation
 - [x] Partition-scoped Gold refresh (only touched months are recomputed)
-- [ ] No-op re-import that avoids republishing unchanged data
+- [x] No-op re-import: identical payloads bump no Delta version and publish no release
 - [x] Fresh player sync from UI using bounded Dagster background jobs
 
 ## M4 — product and prediction
@@ -48,7 +48,7 @@ This roadmap separates implemented code from validated deployment. It does not r
 - [ ] Kafka integration if it adds replay/consumer value; do not pretend JSONL is Kafka
 
 ## GitHub / CV
-- [x] Public repository and Linux CI workflow; latest local suite: 52 tests
+- [x] Public repository and Linux CI workflow; latest local suite: 53 tests
 - [x] Real screenshots committed (`docs/images/`) and Playwright capture scripts; video reproducible locally
 - [x] CV description describes only validated capabilities (docs/CV.md)
 - [x] Synthetic throughput benchmarks recorded (20k games 110s, 100k games 562s); not a production-scale test

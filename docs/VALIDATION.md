@@ -131,7 +131,7 @@ With the Docker stack already running and the host Dagster restarted through `sc
 - Re-published release `r_c9809b10d3d14c8c98e4344ee9092a18` after the layout migration: 6,014 games, 1,115 opening aggregates and 12,028 player rows; Spark parity and Trino publication passed.
 - Synthetic benchmark: 20,000 games / 120,000 moves in **109.64 s** ingestion and **112.10 s** including snapshot (previous checkpoint: 10,000 games in 44.46 s).
 - API operations: optional `CHESS4F_API_TOKEN` on POST/DELETE, `/metrics` request counters plus the published-release gauge, and `/health/deep` checking the pointer and Trino.
-- Full suite: **52 passed**; `verify-serving.py` passed on the partitioned release.
+- Full suite: **53 passed**; `verify-serving.py` passed on the partitioned release.
 
 ## 2026-11-03 100k backfill and clean benchmark
 
@@ -159,8 +159,15 @@ With the Docker stack already running and the host Dagster restarted through `sc
 
 ## 2026-11-03 final review
 
-- Full unit suite: **52 passed**. scripts/verify-serving.py and scripts/verify-openings.py passed against release 
+- Full unit suite: **53 passed**. scripts/verify-serving.py and scripts/verify-openings.py passed against release 
 _5b43ca80eff54877bfbb5d62e6092757 (C1-C7, cube 74,934 recognized blitz games).
 - Services checked: API /health and /health/deep ok, Trino ready, Dagster daemon and webserver up, both schedules and the request sensor RUNNING; GitHub Actions badge passing.
 - Documentation audit: README links resolve, no TODO/FIXME markers, dataset numbers match the manifest.
 - Remaining, explicitly out of the current scope: no-op re-import without republishing, incremental release snapshots, adjacent-month UTC coverage, unattended multi-day operation, HA/TLS/OIDC/backup, and million-game scale tests.
+
+## 2026-11-03 no-op re-import
+
+- Ingestion now compares each game's content hash with the stored `record_id` and `game_key`. Identical games are counted as `unchanged` and skip Bronze/Silver writes, so Delta versions do not move.
+- Direct re-import of an existing PGN finished in **3.43 s** with `accepted: 0`, `unchanged: 1` and identical `Lake.versions()`; previously it would have republished the full 412 MB snapshot (~10 min).
+- End-to-end queue check: a Chess.com re-sync for `dambi333` 2026-03 completed with `accepted: 0`, `unchanged: 10`; the published release stayed `r_5b43ca80eff54877bfbb5d62e6092757` (no snapshot, no upload, no Spark run).
+- Suite: **53 passed**.

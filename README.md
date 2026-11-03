@@ -23,7 +23,7 @@ The capture script is `scripts/capture-demo.py`; generated screenshots and video
 ## What works
 
 - PGN ingestion into Bronze/Silver/Gold Delta tables; original PGN objects retained by SHA-256.
-- Source-scoped stable game IDs, repeatable upserts, correction of obsolete move tails, quarantine and run manifests.
+- Source-scoped stable game IDs, repeatable upserts, correction of obsolete move tails, quarantine and run manifests. Re-importing identical payloads bumps no Delta version and publishes no release.
 - Opening recognition using legal board positions, a versioned Lichess catalog and the last match in the first 36 plies.
 - Public Chess.com monthly player archives and a bounded Lichess archive extractor.
 - Trino-only application analytics pinned to a validated published release; DuckDB remains internal for transformation, training and reference checks.

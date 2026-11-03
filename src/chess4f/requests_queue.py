@@ -93,9 +93,10 @@ def process(root, project, request_id, context=None):
                 from .sources import lichess_finished
                 path, uri = lichess_finished(root, payload["game_id"])
                 run = ingest_pgn(root, path, "lichess", source_uri=uri)
-                if not run["accepted"]:
+                if not run["accepted"] and not run.get("unchanged"):
                     raise ValueError("Finished game was not accepted")
-                item["months"] = [{"run_id": run["run_id"], "accepted": run["accepted"]}]
+                item["months"] = [{"run_id": run["run_id"], "accepted": run["accepted"],
+                                   "unchanged": run.get("unchanged", 0)}]
                 journal = Path(root)/"live"/payload["game_id"]/"events.jsonl"
                 if journal.exists():
                     import hashlib, shutil
@@ -121,9 +122,11 @@ def process(root, project, request_id, context=None):
                             entry = {"month": month, "status": "complete", "accepted": 0, "result": "empty_month"}
                         else:
                             run = ingest_pgn(root, path, payload["source"], limit=payload["limit"], source_uri=uri)
-                            if not run["accepted"]:
+                            if not run["accepted"] and not run.get("unchanged"):
                                 raise ValueError("No games accepted; inspect quarantine")
-                            entry = {"month": month, "status": "complete", "accepted": run["accepted"], "run_id": run["run_id"], "limit": payload["limit"], "possibly_limited": run["accepted"] >= payload["limit"]}
+                            entry = {"month": month, "status": "complete", "accepted": run["accepted"],
+                                     "unchanged": run.get("unchanged", 0), "run_id": run["run_id"],
+                                     "limit": payload["limit"], "possibly_limited": run["accepted"] >= payload["limit"]}
                     item["months"].append(entry)
                     update(stage=f"processed:{month}")
             pointer = Path(root) / "published/latest.json"

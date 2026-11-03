@@ -59,7 +59,7 @@ def refresh_months(root, start, end=None, limit=1000, check_only=False):
                     if not after["available"] or after["validator"] != source["validator"]:
                         raise RuntimeError("Source changed during download; retry before ingestion")
                     run = ingest_pgn(root, pgn, "lichess", source_uri=uri)
-                    if run.get("accepted", 0) == 0:
+                    if run.get("accepted", 0) == 0 and run.get("unchanged", 0) == 0:
                         raise RuntimeError("No games accepted; inspect ingestion quarantine before committing refresh")
                     attempt.update(processor_version=PROCESSOR_VERSION, status="limited" if limit else "complete_source_scan",
                                    committed_validator=source["validator"], committed_limit=limit,

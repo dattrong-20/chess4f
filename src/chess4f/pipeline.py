@@ -117,7 +117,7 @@ def rebuild_gold(lake, months=None):
     clause = ""
     if months:
         clause = " AND year_month IN (" + ", ".join("?" for _ in months) + ")"
-    with lake.connection() as con:
+    with lake.connection(tables=["silver/games"]) as con:
         openings = con.execute(f"""
             SELECT source, year_month, speed, rating_group, opening_family,
                    count(*)::BIGINT n_games,
@@ -164,11 +164,15 @@ def ingest_pgn(root, path, source="import", start=None, end=None, limit=None, so
     if not original_path.exists():
         shutil.copyfile(path, original_path)
     report = dict(run_id=run_id, source=source, source_uri=origin, started_at=utc_now(),
-                  status="running", read=0, selected=0, accepted=0, quarantined=0,
+                  status="running", read=0, selected=0, accepted=0, unchanged=0, quarantined=0,
                   filtered=0, catalog_version=catalog.version, start=start, end=end, limit=limit,
                   source_sha256=source_hash, original_object=str(original_path))
     report_path = Path(root) / "metadata/runs" / f"{run_id}.json"
     atomic_json(report_path, report)
+    with lake.connection(tables=["bronze/games", "silver/games", "silver/quarantine"]) as snapshot:
+        existing_games = dict(snapshot.execute("SELECT game_key, record_id FROM silver_games").fetchall())
+        existing_records = {row[0] for row in snapshot.execute("SELECT record_id FROM bronze_games").fetchall()}
+        existing_quarantine = {row[0] for row in snapshot.execute("SELECT record_id FROM silver_quarantine").fetchall()}
     bronze, clean, moves, bad = [], [], [], []
     touched = set()
     def flush():
@@ -190,29 +194,42 @@ def ingest_pgn(root, path, source="import", start=None, end=None, limit=None, so
                 report["read"] += 1
                 raw = game.accept(chess.pgn.StringExporter(headers=True, variations=False, comments=False))
                 record_id = digest(source + "|" + raw)
-                bronze.append(dict(record_id=record_id, source=source, source_uri=origin,
-                                   pgn=raw, run_id=run_id, ingested_at=utc_now()))
+                new_record = record_id not in existing_records
                 try:
                     row, game_moves = transform(game, source, origin, run_id, record_id, catalog)
                     day = row["played_at"][:10]
                     if (start and day < start) or (end and day > end):
                         report["filtered"] += 1
+                        if new_record:
+                            bronze.append(dict(record_id=record_id, source=source, source_uri=origin,
+                                               pgn=raw, run_id=run_id, ingested_at=utc_now()))
+                    elif existing_games.get(row["game_key"]) == record_id:
+                        # Identical payload already imported: no partition rewrite.
+                        report["unchanged"] += 1
+                        report["selected"] += 1
                     else:
                         clean.append(row); moves.extend(game_moves)
                         touched.add(row["year_month"])
                         report["accepted"] += 1
                         report["selected"] += 1
+                        existing_games[row["game_key"]] = record_id
+                        if new_record:
+                            bronze.append(dict(record_id=record_id, source=source, source_uri=origin,
+                                               pgn=raw, run_id=run_id, ingested_at=utc_now()))
                 except ValueError as exc:
-                    bad.append(dict(record_id=record_id, run_id=run_id, source_uri=origin, reason=str(exc)))
+                    if record_id not in existing_quarantine:
+                        bad.append(dict(record_id=record_id, run_id=run_id, source_uri=origin, reason=str(exc)))
                     report["quarantined"] += 1
+                existing_records.add(record_id)
                 if report["read"] % FLUSH_EVERY == 0:
                     flush()
                     atomic_json(report_path, report)
-                if limit and report["accepted"] >= limit:
+                if limit and report["accepted"] + report["unchanged"] >= limit:
                     report["status"] = "limited"
                     break
             flush()
-            rebuild_gold(lake, sorted(touched) or None)
+            if touched:
+                rebuild_gold(lake, sorted(touched))
             report["status"] = "complete" if report["status"] == "running" else report["status"]
             report["versions"] = lake.versions()
     except Exception as exc:

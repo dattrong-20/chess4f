@@ -98,11 +98,13 @@ class Lake:
             return []
         return list(DeltaTable(str(self.path(name))).metadata().partition_columns)
 
-    def connection(self):
+    def connection(self, tables=None):
         con = duckdb.connect()
         con.execute("SET threads=2")
         con.execute("SET memory_limit='1GB'")
         for name, schema in TABLES.items():
+            if tables is not None and name not in tables:
+                continue
             # Read Delta snapshot through delta-rs, never glob obsolete Parquet files.
             # Explicit active-file list from Delta log avoids an Arrow string_view
             # statistics-expression incompatibility after MERGE. These v0.1 tables

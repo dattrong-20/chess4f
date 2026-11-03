@@ -17,6 +17,7 @@ def test_repeat_ingest_is_idempotent(lake_root, pgn_file):
     a = ingest_pgn(lake_root, pgn_file, "lichess")
     b = ingest_pgn(lake_root, pgn_file, "lichess")
     assert a["status"] == b["status"] == "complete"
+    assert b["accepted"] == 0 and b["unchanged"] == 2
     assert overview(lake_root)["summary"]["games"] == 2
     with Lake(lake_root).connection() as con:
         assert con.execute("SELECT count(*) FROM silver_moves").fetchone()[0] == 6
@@ -24,6 +25,15 @@ def test_repeat_ingest_is_idempotent(lake_root, pgn_file):
         assert con.execute("SELECT count(*) FROM gold_player_games").fetchone()[0] == 4
     assert player_profile(lake_root, "lichess", "ALICE")["summary"]["wins"] == 1
     assert sum(r["popularity_pct"] for r in overview(lake_root)["openings"]) == pytest.approx(100)
+
+
+def test_identical_reimport_does_not_bump_delta_versions(lake_root, pgn_file):
+    ingest_pgn(lake_root, pgn_file, "lichess")
+    before = Lake(lake_root).versions()
+    second = ingest_pgn(lake_root, pgn_file, "lichess")
+    assert second["accepted"] == 0
+    assert second["unchanged"] == 2
+    assert Lake(lake_root).versions() == before
 
 
 def test_date_filter_and_quarantine(lake_root, pgn_file):
