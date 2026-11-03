@@ -74,7 +74,6 @@ def player_sync(api, source, username):
 
 def backfill(api):
     st.subheader("Nhập lịch sử Lichess theo tháng")
-    st.caption("Xử lý tuần tự tối đa 24 tháng/lượt. Chạy lại dùng checkpoint, không nhân đôi ID ván. Mẫu đầu tệp không đại diện toàn tháng.")
     with st.form("backfill"):
         a,b = st.columns(2)
         start = a.text_input("Từ tháng", "2026-09")

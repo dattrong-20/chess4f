@@ -28,7 +28,6 @@ st.caption("Khám phá khai cuộc · Hiểu lịch sử thi đấu · Theo dõi
 st.sidebar.title("chess4f")
 st.sidebar.caption("CHESS ANALYTICS WORKSPACE")
 section = st.sidebar.radio("Không gian phân tích", ["Tổng quan", "Khai cuộc C1–C7", "Hồ sơ cá nhân", "Ván đấu", "Live observer", "Nhập dữ liệu"])
-st.sidebar.info("Dữ liệu hiển thị chỉ bao gồm phần đã nhập. Tần suất lịch sử không phải xác suất thắng hay gợi ý nước tốt nhất.")
 if st.sidebar.button("Đọc lại dữ liệu"):
     st.rerun()
 
