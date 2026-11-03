@@ -10,7 +10,7 @@ This roadmap separates implemented code from validated deployment. It does not r
 - [x] Personal move frequencies with a historical cutoff
 - [x] Experimental pre-game W/D/L model and temporal holdout
 - [x] Public Lichess FEN stream receiver and raw journal
-- [ ] End-to-end live validation on a currently running game
+- [x] End-to-end live validation on a currently running Lichess game, including finished-game publication
 - [x] Docker runtime smoke test: API health, Delta-backed overview and Streamlit health
 
 ## M2 — lakehouse integration (single-machine deployment)
@@ -29,25 +29,25 @@ This roadmap separates implemented code from validated deployment. It does not r
 - [x] Dagster schedules, bounded read/publication retries, run UI and capped Lichess refresh
 - [ ] Additional source quotas and unattended multi-day validation
 - [ ] Efficient no-op re-import and partition-scoped gold refresh
-- [ ] Fresh player sync from UI using bounded background jobs
+- [x] Fresh player sync from UI using bounded Dagster background jobs
 
 ## M4 — product and prediction
 - [x] Restore all C1–C7 views with explicit filters/denominators; real Trino cube parity and seven AppTest views passed
-- [ ] Better UI, rating trend and source coverage indicators
-- [ ] Broader training cohort; calibration and stronger temporal/group evaluation
-- [ ] Position-based outcome model (separate from pre-game baseline)
+- [x] Native themed UI, rating trend, coverage notes and final screenshot capture
+- Archived experiment only: broader model evaluation is no longer a delivery requirement.
+- Out of current scope by user request: position-based prediction; experimental prediction UI removed.
 - [ ] Personalized vs population move frequency backoff with uncertainty
 - [x] Experimental model limitations documented; no general-accuracy claim
 
 ## M5 — live (optional)
-- [ ] Discover game from username through a supported documented endpoint
+- [x] Discover game from username through the documented Lichess endpoint
 - [ ] Validate delayed stream reconnect and snapshot catch-up against a real game
-- [ ] Persist events to lakehouse; import final result exactly once
+- [x] Retain raw event objects and import final PGN with idempotent game keys (not a distributed exactly-once claim)
 - [ ] Display observer-only move habits on received positions
 - [ ] Kafka integration if it adds replay/consumer value; do not pretend JSONL is Kafka
 
 ## GitHub / CV
-- [x] Public repository and Linux CI workflow; latest local suite: 24 tests
+- [x] Public repository and Linux CI workflow; latest local suite: 33 tests
 - [ ] Screenshots and reproducible demonstration recording
 - [ ] CV description describes only validated capabilities
 - [ ] Benchmark actual throughput, latency, memory and recovery behavior

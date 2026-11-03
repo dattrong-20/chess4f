@@ -12,3 +12,5 @@ logs/
 *.token
 *.log
 .DS_Store
+# Local continuation notes; kept out of the public repository
+docs/HANDOFF.md

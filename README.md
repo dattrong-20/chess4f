@@ -4,7 +4,7 @@
 
 chess4f is a university/portfolio project that extends a chess-opening visualization study into a data application. It ingests public game data, recognizes openings by board position, serves player profiles and records reproducible pipeline runs.
 
-> **Status: local application plus validated lakehouse batch integration.** MinIO, Spark, Hive Metastore and Trino have processed and verified a real-data release. Spark runs as one local driver (`local[2]`); this is not a multi-node cluster. Dagster schedules and a complete manual orchestration run are validated; unattended scheduled operation and real-game live validation remain milestones. See [Dagster orchestration](docs/ORCHESTRATION.md). See [lakehouse setup](docs/LAKEHOUSE.md), [validation evidence](docs/VALIDATION.md) and [roadmap](docs/ROADMAP.md).
+> **Status: local application plus validated lakehouse batch integration.** MinIO, Spark, Hive Metastore and Trino have processed and verified a real-data release. Spark runs as one local driver (`local[2]`); this is not a multi-node cluster. Dagster schedules and a complete manual orchestration run are validated; username sync on both platforms and a real Lichess stream through finished-game publication are validated; unattended multi-day operation remains a milestone. See [Dagster orchestration](docs/ORCHESTRATION.md). See [lakehouse setup](docs/LAKEHOUSE.md), [validation evidence](docs/VALIDATION.md) and [roadmap](docs/ROADMAP.md).
 
 ## What works
 
@@ -15,7 +15,7 @@ chess4f is a university/portfolio project that extends a chess-opening visualiza
 - Trino-only application analytics pinned to a validated published release; DuckDB remains internal for transformation, training and reference checks.
 - Dagster source checks and capped refresh schedules, with Spark validation before release publication.
 - Player results, openings, opponents, game replay and personal move frequencies with an explicit historical cutoff.
-- Experimental **pre-game** logistic-regression W/D/L baseline using Elo, chronological evaluation and a prior-frequency baseline.
+- Background username-history synchronization and monthly backfill via a durable Dagster request queue, with progress and retry from the UI. The old model experiment is not exposed in the application.
 - Lichess public delayed stream receiver, raw event journal and observer UI. Not a Board API client, engine or player-assistance tool.
 - FastAPI, Streamlit, Docker Compose and automated tests.
 
@@ -27,6 +27,8 @@ Demo sources (bounded samples; see validation notes for publication status):
 |---|---|---:|
 | Lichess | First 1,000 matching Rated Blitz games from each September and October 2026 archive | 2,000 |
 | Chess.com | Public `hikaru` archive for September 2026 | 509 |
+
+Validation added 10 October games for Lichess `german11`, 10 for Chess.com `hikaru`, and one completed observed Lichess game: **2,530 unique games** at this checkpoint.
 
 The Lichess demo is a **bounded integration sample**, not a random or representative monthly sample. The Chess.com sample is one player's history, not platform-wide data. Sources are selectable and not silently pooled. Data, models, credentials and virtual environments are excluded from Git.
 
@@ -42,13 +44,13 @@ flowchart LR
   O[Dagster schedules] --> A
   E --> F[FastAPI]
   F --> G[Streamlit]
-  C --> H[Temporal model experiment]
-  H --> F
   I[Lichess delayed stream] --> J[JSONL events + current state]
   J --> F
+  J --> Q[Finished-game Dagster job]
+  Q --> B
 ```
 
-Storage is local on drive D for this milestone. The live journal is not yet automatically compacted into Delta or imported as a finished PGN; this is tracked in the roadmap.
+Local Delta staging is published as immutable MinIO releases. Completed live games are automatically imported from PGN and published after Spark/Trino checks; raw event journals are retained by hash. See [user jobs and live workflow](docs/USER_JOBS.md).
 
 ## Run locally (Windows, Python 3.11)
 
@@ -77,7 +79,7 @@ Start API and UI in two terminals:
 
 - Dashboard: http://localhost:8501
 - API docs: http://localhost:8000/docs
-- API is read-only and local-first. Do not expose directly to the internet: authentication and resource controls are not implemented yet.
+- API includes local job-submission endpoints. Keep its localhost binding: public-user authentication is not implemented.
 
 ## Docker
 

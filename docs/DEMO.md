@@ -14,12 +14,12 @@ If Dagster is already running, use the existing instance; do not launch a duplic
 ## Demo sequence and screenshots
 
 1. Docker Desktop: one chess4f group, separate services. Capture healthy API and Trino. Spark is an on-demand job, not an always-running cluster.
-2. Overview: choose Lichess (2,000 games) then Chess.com (509 games). Explain sample coverage, source separation and published release ID. These numbers describe the documented demo, not a fixed application limit.
+2. Overview: choose Lichess (2,011 games at this checkpoint) then Chess.com (519 games). Explain sample coverage, source separation and the distinction between source samples. These numbers describe the documented demo, not a fixed application limit.
 3. Opening analysis: show C1, C3 and C4; change month/Elo filters and sample threshold. Explain white score = wins + half draws divided by games. Show C2/C7 as two observed sample months, not a reliable long-term trend. Export one CSV.
 4. Player profile: chesscom / hikaru. Show results, opponents and openings. Copy one game key into the replay screen; show historical habits and the insufficient-history message where applicable.
-5. Experimental prediction: show held-out evaluation and prior baseline, explain the elite-player sample and pregame Elo-only inputs. Do not claim live position evaluation or general calibration.
+5. Player sync: expand the download form, choose months and a cap, then submit. Show durable queued/running/published status. Requests can take minutes while Spark/Trino validate.
 6. Dagster: show successful run ca7aed44-2668-4b81-a494-f423ef61a26a and its four steps. Explain that publication only follows Spark and Trino validation. Show schedules/timezone and capped ingestion.
-7. Traceability: show the October parser failure in the historical run manifest and successful reprocessing. No raw failure evidence was erased.
+7. Live observer: use a current public Lichess game ID, connect and observe board/opening updates. Explain the source delay. The final game is automatically queued for ingestion. The old traceability screen is hidden; historical manifests remain retained.
 
 ## Verification commands
 
@@ -33,4 +33,13 @@ Integration checks need running services and local Delta data matching the publi
 
 ## Remaining boundaries
 
-MinIO hosts immutable published Delta releases; ingestion still stages local Delta before publication. Dagster is single-host SQLite. No automatic OS startup or high availability is claimed. Live observation is optional and not yet validated end-to-end against a current game. Broader cohort modeling, partition-scoped processing and full historical coverage remain roadmap items.
+MinIO hosts immutable published Delta releases; ingestion still stages local Delta before publication. Dagster is single-host SQLite. No automatic OS startup or high availability is claimed. Live observation and finished-game publication were validated with eRIlxQlE; Chess.com live is not supported. Partition-scoped processing and full historical coverage remain roadmap items. Prediction is excluded from the requested UI.
+
+## Capture real browser evidence
+```powershell
+.\.venv\Scripts\python.exe -m pip install -e '.[demo]'
+.\.venv\Scripts\python.exe -m playwright install chromium
+.\.venv\Scripts\python.exe scripts/capture-demo.py
+.\.venv\Scripts\python.exe scripts/capture-live-demo.py
+```
+The first script uses retained live state (set CHESS4F_DEMO_GAME if needed). The second chooses a currently broadcast public Blitz game and records 30 seconds; source availability/move timing can make that assertion fail. Outputs are in artifacts/demo.
