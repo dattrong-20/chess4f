@@ -8,7 +8,8 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-st.set_page_config(page_title="chess4f · Chess intelligence", page_icon="♞", layout="wide")
+st.set_page_config(page_title="chess4f · Chess intelligence", page_icon="♞", layout="wide",
+                   initial_sidebar_state="expanded")
 st.markdown("""
 <style>
   .block-container {padding-top: 2.2rem; max-width: 1200px;}
@@ -17,7 +18,9 @@ st.markdown("""
   [data-testid="stSidebar"] {border-right: 1px solid #e5e5df;}
   h1, h2, h3 {letter-spacing: -0.01em;}
   .stButton > button[kind="primary"] {background: #81B64C; border-color: #81B64C;}
-  [data-testid="stToolbar"], [data-testid="stDecoration"] {display: none;}
+  /* Keep the sidebar collapse/expand control: only hide the deploy button. */
+  [data-testid="stAppDeployButton"], [data-testid="stDecoration"] {display: none;}
+  [data-testid="stSidebarCollapseButton"], [data-testid="stExpandSidebarButton"] {visibility: visible !important;}
 </style>
 """, unsafe_allow_html=True)
 API = os.environ.get("CHESS4F_API", "http://127.0.0.1:8000")
