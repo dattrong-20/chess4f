@@ -14,7 +14,7 @@ If Dagster is already running, use the existing instance; do not launch a duplic
 ## Demo sequence and screenshots
 
 1. Docker Desktop: one chess4f group, separate services. Capture healthy API and Trino. Spark is an on-demand job, not an always-running cluster.
-2. Overview: choose Lichess (2,011 games at this checkpoint) then Chess.com (519 games). Explain sample coverage, source separation and the distinction between source samples. These numbers describe the documented demo, not a fixed application limit.
+2. Overview: choose Lichess (2,011 games at this checkpoint) then Chess.com (3,487 games). Explain sample coverage, source separation and the distinction between source samples. These numbers describe the documented demo, not a fixed application limit.
 3. Opening analysis: show C1, C3 and C4; change month/Elo filters and sample threshold. Explain white score = wins + half draws divided by games. Show C2/C7 as two observed sample months, not a reliable long-term trend. Export one CSV.
 4. Player profile: chesscom / hikaru. Show results, opponents and openings. Copy one game key into the replay screen; show historical habits and the insufficient-history message where applicable.
 5. Player sync: expand the download form, choose months and a cap, then submit. Show durable queued/running/published status. Requests can take minutes while Spark/Trino validate.

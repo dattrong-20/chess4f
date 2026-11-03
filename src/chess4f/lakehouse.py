@@ -134,6 +134,26 @@ def sql(statement, endpoint=None):
             response = http.get(next_uri)
 
 
+def register_tables(rid, locations):
+    """Register missing Delta tables; tolerate an already-registered table.
+
+    A partially registered schema or a retried publication can surface as a
+    metastore duplicate-key error even after the preceding SHOW TABLES check.
+    That is only accepted when the table is visible afterwards.
+    """
+    registered = {row["Table"] for row in sql(f"SHOW TABLES FROM chess.{rid}")}
+    for table, location in locations.items():
+        if table in registered:
+            continue
+        statement = (f"CALL chess.system.register_table(schema_name=>'{rid}', table_name=>'{table}', "
+                     f"table_location=>'s3://chess4f/releases/{rid}/{location}')")
+        try:
+            sql(statement)
+        except RuntimeError:
+            if table not in {row["Table"] for row in sql(f"SHOW TABLES FROM chess.{rid}")}:
+                raise
+
+
 def validate_publish(root, project, rid):
     rid = release_id(rid)
     lake = Lake(root)
@@ -143,13 +163,9 @@ def validate_publish(root, project, rid):
         if manifest["status"] not in ("uploaded", "published"):
             raise ValueError("Release must be uploaded first")
         sql(f"CREATE SCHEMA IF NOT EXISTS chess.{rid}")
-        registered = {r["Table"] for r in sql(f"SHOW TABLES FROM chess.{rid}")}
         locations = {name.replace("/", "_"): name for name in TABLES}
         locations.update({"spark_openings": "spark/gold/openings", "spark_player_games": "spark/gold/player_games"})
-        for table, location in locations.items():
-            if table not in registered:
-                sql(f"CALL chess.system.register_table(schema_name=>'{rid}', table_name=>'{table}', "
-                    f"table_location=>'s3://chess4f/releases/{rid}/{location}')")
+        register_tables(rid, locations)
         results = {}
         for name, expected in manifest["tables"].items():
             count = sql(f"SELECT count(*) n FROM chess.{rid}.{name.replace('/', '_')}")[0]["n"]

@@ -99,3 +99,12 @@ With the Docker stack already running and the host Dagster restarted through `sc
 - Deployed by rebuilding the `chess4f:local` image and recreating api/dashboard. Verified inside the running API that `month_plan('2026-7','2026-08')` returns `['2026-07','2026-08']`, and `POST /requests` with `2026-13` returns HTTP 422 `{"detail":"start has an invalid month: '2026-13'"}` instead of a raw `fromisoformat` error.
 - The Streamlit error box now prints the API `detail` string rather than the raw JSON envelope. Full suite: **39 passed**.
 
+
+## 2026-11-03 profile auto-fetch exercised and dataset grown
+
+- The auto-fetch path was exercised with real accounts: Chess.com `hikaru` (6 months), `qbui` and `bodoiheud` (3 months each). They completed through sensor -> collection -> Spark parity -> Trino publication without running an overview backfill first.
+- One request (`dambi333`) failed during publication with a Hive Metastore duplicate table registration (`UNIQUETABLE`). That was a real idempotency gap, not a missing account: `register_tables` now re-checks table visibility after a failed `CALL register_table` and only accepts the duplicate when the table exists. Two regression tests cover the tolerated and re-raised paths.
+- New published release `r_85d7b319936244558d95a1776b9a1405`: **5,498 games** (2,011 Lichess / 3,487 Chess.com), 440,517 move rows, 696 opening aggregate rows, 10,996 player-perspective rows, 1,000 historical quarantine rows.
+- `scripts/verify-serving.py` passed again, and `scripts/verify-openings.py` rendered all C1-C7 views; the Lichess Rated Blitz cube still totals 1,991 games.
+- Full unit suite: **42 passed** (includes the two registration-resilience tests).
+- Dashboard visual pass: shared `apps/theme.py` palette and layout helper, a WDL donut with a centered game total, consistent hover/legend/grid styling across overview, player profile and C1-C7, and two explanatory captions removed from the overview on request. Screenshots recaptured.

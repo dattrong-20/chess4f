@@ -3,6 +3,8 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
+from theme import COLORS, WDL, style
+
 
 def render(payload):
     st.header("Khai cuộc · mức sử dụng và kết quả")
@@ -78,12 +80,13 @@ def render(payload):
         melted = table.melt(id_vars=[key, "n_games"], value_vars=["white_wins", "draws", "black_wins"], var_name="Kết quả", value_name="count")
         melted["Tỷ lệ (%)"] = 100 * melted["count"] / melted.n_games
         melted["Kết quả"] = melted["Kết quả"].map({"white_wins": "Trắng thắng", "draws": "Hòa", "black_wins": "Đen thắng"})
-        fig = px.bar(melted, x="Tỷ lệ (%)", y=key, color="Kết quả", orientation="h", barmode="stack", color_discrete_map={"Trắng thắng": "#247ba0", "Hòa": "#aab2bd", "Đen thắng": "#ed9135"})
+        fig = px.bar(melted, x="Tỷ lệ (%)", y=key, color="Kết quả", orientation="h", barmode="stack",
+                     color_discrete_map=WDL)
         fig.update_xaxes(range=[0, 100])
     if table.empty:
         st.warning("Chưa đủ mẫu cho lựa chọn này. Hãy mở rộng bộ lọc hoặc điều chỉnh ngưỡng; ngưỡng thấp làm kết quả kém ổn định.")
     elif fig is not None:
-        fig.update_layout(height=520, margin=dict(t=30, b=30), legend_title_text="")
+        style(fig, height=520)
         if view.startswith(("C2", "C7")):
             fig.update_xaxes(type="category")
         st.plotly_chart(fig, width="stretch")

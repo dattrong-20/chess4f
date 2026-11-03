@@ -53,27 +53,30 @@ if section == "Tổng quan":
             if source == "lichess":
                 st.write("Mỗi lượt thu thập demo giới hạn 1.000 ván Rated Blitz đầu tiên khớp tháng. Bộ mẫu ban đầu tháng 9 và tháng 10/2026 gồm 2.000 ván; đồng bộ người chơi và ván trực tiếp có thể bổ sung dữ liệu; đây không phải giới hạn lưu trữ của hệ thống.")
                 st.write("Chạy lại cùng nguồn và giới hạn sẽ không cộng thêm ván trùng. Muốn mở rộng cần tăng giới hạn hoặc nhập thêm tháng, sau đó kiểm chứng và công bố bản mới.")
-                st.caption("Lịch Dagster hiện lấy tháng trước vào Chủ nhật, giới hạn 1.000 ván/lượt. Mẫu đầu tệp không đại diện toàn tháng.")
             elif source == "chesscom":
                 st.write("Bộ demo ban đầu gồm lịch sử Hikaru tháng 9/2026; lịch sử đồng bộ thêm được gộp theo ID ván duy nhất. Số ván phản ánh dữ liệu đã nhập, không đại diện toàn nền tảng.")
             else:
                 st.write("Nguồn PGN nhập thủ công, được phân tích riêng với hai nền tảng.")
-        st.info("Biểu đồ khai cuộc: chỉ Rated Blitz đã nhận diện. Mẫu số tỷ trọng gồm mọi nhóm đủ điều kiện, không chỉ Top N.")
         df = pd.DataFrame(data["openings"])
         if not df.empty:
+            from theme import COLORS, WDL, style
             n = st.slider("Top nhóm", 5, 30, 10)
             fig = px.bar(df.head(n).iloc[::-1], x="popularity_pct", y="opening_family", orientation="h",
-                         color_discrete_sequence=["#3155d9"], labels={"popularity_pct":"Tỷ trọng (%)", "opening_family":""})
+                         color_discrete_sequence=[COLORS["primary"]],
+                         labels={"popularity_pct":"Tỷ trọng (%)", "opening_family":""},
+                         hover_data={"n_games": ":,.0f"})
             st.subheader("Khai cuộc phổ biến")
             fig.update_traces(texttemplate="%{x:.2f}%", textposition="outside", cliponaxis=False)
-            fig.update_layout(height=max(380, n*28), margin=dict(t=20,r=65,b=20), yaxis_title=None)
+            style(fig, height=max(380, n*28), margin=dict(t=20, r=65, b=20), yaxis_title=None)
             st.plotly_chart(fig, width="stretch")
             shown = df.head(n).melt(id_vars=["opening_family"], value_vars=["white_win_pct","draw_pct","black_win_pct"],var_name="Kết quả",value_name="Tỷ lệ (%)")
             shown["Kết quả"] = shown["Kết quả"].map({"white_win_pct":"Trắng thắng","draw_pct":"Hòa","black_win_pct":"Đen thắng"})
             st.subheader("Cơ cấu kết quả thi đấu")
-            outcome = px.bar(shown,x="Tỷ lệ (%)",y="opening_family",color="Kết quả",orientation="h",barmode="stack", color_discrete_map={"Trắng thắng":"#247ba0","Hòa":"#aab2bd","Đen thắng":"#ed9135"})
-            outcome.update_layout(height=max(380,n*28),yaxis_title=None,legend_title_text="",legend=dict(orientation="h",y=1.1),margin=dict(t=40,b=20))
-            outcome.update_xaxes(range=[0,100])
+            outcome = px.bar(shown,x="Tỷ lệ (%)",y="opening_family",color="Kết quả",orientation="h",barmode="stack",
+                             color_discrete_map=WDL)
+            style(outcome, height=max(380, n*28), yaxis_title=None,
+                  legend=dict(orientation="h", y=1.08, x=0), margin=dict(t=40, b=20))
+            outcome.update_xaxes(range=[0, 100])
             st.plotly_chart(outcome,width="stretch")
             with st.expander("Xem bảng số liệu"):
                 st.dataframe(df, width="stretch", hide_index=True)

@@ -52,3 +52,33 @@ def test_failed_parity_never_switches_published_pointer(tmp_path, monkeypatch):
 def test_release_identifier_rejects_sql_or_path_injection():
     with pytest.raises(ValueError):
         lakehouse.release_id("../other; DROP SCHEMA chess")
+
+
+def test_register_tables_tolerates_duplicate_after_partial_registration(monkeypatch):
+    calls = {"show": 0}
+
+    def fake_sql(statement):
+        if statement.startswith("SHOW TABLES"):
+            calls["show"] += 1
+            # First check sees nothing; after the failed CALL the table exists.
+            return [] if calls["show"] == 1 else [{"Table": "gold_openings"}]
+        if statement.startswith("CALL"):
+            raise RuntimeError("duplicate key value violates unique constraint UNIQUETABLE")
+        return []
+
+    monkeypatch.setattr(lakehouse, "sql", fake_sql)
+    lakehouse.register_tables("r_" + "a" * 32, {"gold_openings": "gold/openings"})
+    assert calls["show"] == 2
+
+
+def test_register_tables_reraises_when_table_stays_missing(monkeypatch):
+    def fake_sql(statement):
+        if statement.startswith("SHOW TABLES"):
+            return []
+        if statement.startswith("CALL"):
+            raise RuntimeError("catalog unavailable")
+        return []
+
+    monkeypatch.setattr(lakehouse, "sql", fake_sql)
+    with pytest.raises(RuntimeError, match="catalog unavailable"):
+        lakehouse.register_tables("r_" + "a" * 32, {"gold_openings": "gold/openings"})

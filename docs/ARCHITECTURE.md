@@ -120,5 +120,5 @@ These are roadmap items, not current capabilities.
 | Does serving match local data? | `scripts/verify-serving.py` |
 | Do all opening views work? | `scripts/verify-openings.py` |
 | Is Spark/Trino parity enforced? | `jobs/build_gold.py`, `lakehouse.validate_publish` |
-| Are invariants covered by tests? | `pytest -q` (39 tests) |
+| Are invariants covered by tests? | `pytest -q` (42 tests) |
 | What does the sample actually contain? | `chess4f coverage` |
